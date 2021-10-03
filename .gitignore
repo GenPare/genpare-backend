@@ -1,4 +1,3 @@
 build/
 .gradle/
-.idea/sonarlint/
-.idea/workspace.xml
+.idea/
