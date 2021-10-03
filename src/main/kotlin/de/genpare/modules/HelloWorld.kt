@@ -1,12 +1,10 @@
-package de.genpare.plugins
+package de.genpare.modules
 
-import io.ktor.routing.*
-import io.ktor.http.*
 import io.ktor.application.*
 import io.ktor.response.*
-import io.ktor.request.*
+import io.ktor.routing.*
 
-fun Application.configureRouting() {
+fun Application.helloWorld() {
     routing {
         get("/") {
             call.respondText("Hello World!")
