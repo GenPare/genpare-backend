@@ -2,9 +2,6 @@ package de.genpare
 
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonSyntaxException
-import com.google.gson.TypeAdapter
-import com.google.gson.stream.JsonReader
-import com.google.gson.stream.JsonWriter
 import com.typesafe.config.ConfigFactory
 import de.genpare.data.dtos.*
 import de.genpare.data.enums.Gender
@@ -269,16 +266,21 @@ class ApplicationTest {
     }
 
     @Test
-    fun salaryPost() {
+    fun salaryPostSucceeds() {
         insertTestUser()
 
         withApplication(testEnvironment) {
+            val salary = NewSalaryDTO(1337, 69420, Gender.DIVERSE, "Bar-ist in Foo-logy", State.BERLIN)
             handleRequest(
                 HttpMethod.Post,
                 "/members/salary",
-                withJson(SalaryDTO(1337, 69420, Gender.DIVERSE, "Bar-ist in Foo-logy", State.BERLIN))
+                withJson(salary)
             ).apply {
-                assertEquals(HttpStatusCode.NoContent, response.status())
+                assertEquals(HttpStatusCode.OK, response.status())
+                assertNotNull(response.content)
+
+                val newSalary = assertDeserialize<NewSalaryDTO>(response.content!!) ?: return@apply
+                assertEquals(salary, newSalary)
             }
         }
     }
@@ -289,7 +291,7 @@ class ApplicationTest {
             handleRequest(
                 HttpMethod.Post,
                 "/members/salary",
-                withJson(SalaryDTO(1337, 69420, Gender.DIVERSE, "Bar-ist in Foo-logy", State.BERLIN))
+                withJson(NewSalaryDTO(1337, 69420, Gender.DIVERSE, "Bar-ist in Foo-logy", State.BERLIN))
             ).apply {
                 assertEquals(HttpStatusCode.NotFound, response.status())
             }
@@ -304,7 +306,7 @@ class ApplicationTest {
             handleRequest(
                 HttpMethod.Post,
                 "/members/salary",
-                withJson(SalaryDTO(1337, 69420, Gender.DIVERSE, (0..100).joinToString { "a" }, State.BERLIN))
+                withJson(NewSalaryDTO(1337, 69420, Gender.DIVERSE, (0..100).joinToString { "a" }, State.BERLIN))
             ).apply {
                 assertEquals(HttpStatusCode.BadRequest, response.status())
             }
@@ -320,9 +322,103 @@ class ApplicationTest {
             handleRequest(
                 HttpMethod.Post,
                 "/members/salary",
-                withJson(SalaryDTO(1337, 69420, Gender.DIVERSE, "Bar-ist in Foo-logy", State.BERLIN))
+                withJson(NewSalaryDTO(1337, 69420, Gender.DIVERSE, "Bar-ist in Foo-logy", State.BERLIN))
             ).apply {
                 assertEquals(HttpStatusCode.Conflict, response.status())
+            }
+        }
+    }
+
+    private fun salaryPatchExecute(salary: ModifySalaryDTO) {
+        withApplication(testEnvironment) {
+            handleRequest(
+                HttpMethod.Patch,
+                "/members/salary",
+                withJson(salary)
+            ).apply {
+                assertEquals(HttpStatusCode.OK, response.status())
+                assertNotNull(response.content)
+
+                val newSalary = assertDeserialize<ModifySalaryDTO>(response.content!!) ?: return@apply
+                assertEquals(salary, newSalary)
+            }
+        }
+    }
+
+    @Test
+    fun salaryPatchSucceedsSalary() {
+        val testUser = insertTestUser()
+        insertTestSalary(testUser.id.value)
+
+        salaryPatchExecute(ModifySalaryDTO(1337, 42069, Gender.DIVERSE, "Bar-ist in Foo-logy", State.BERLIN))
+    }
+
+    @Test
+    fun salaryPatchSucceedsGender() {
+        val testUser = insertTestUser()
+        insertTestSalary(testUser.id.value)
+
+        salaryPatchExecute(ModifySalaryDTO(1337, 69420, Gender.FEMALE, "Bar-ist in Foo-logy", State.BERLIN))
+    }
+
+    @Test
+    fun salaryPatchSucceedsJobTitle() {
+        val testUser = insertTestUser()
+        insertTestSalary(testUser.id.value)
+
+        salaryPatchExecute(ModifySalaryDTO(1337, 69420, Gender.DIVERSE, "Foo-ist in Bar-logy", State.BERLIN))
+    }
+
+    @Test
+    fun salaryPatchSucceedsState() {
+        val testUser = insertTestUser()
+        insertTestSalary(testUser.id.value)
+
+        salaryPatchExecute(ModifySalaryDTO(1337, 69420, Gender.DIVERSE, "Bar-ist in Foo-logy", State.BRANDENBURG))
+    }
+
+    @Test
+    fun salaryPatchUnknownSessionId() {
+        insertTestSalary(69)
+
+        withApplication(testEnvironment) {
+            handleRequest(
+                HttpMethod.Patch,
+                "/members/salary",
+                withJson(ModifySalaryDTO(1337, 69420, Gender.DIVERSE, "Bar-ist in Foo-logy", State.BERLIN))
+            ).apply {
+                assertEquals(HttpStatusCode.NotFound, response.status())
+            }
+        }
+    }
+
+    @Test
+    fun salaryPatchJobTitleExceedsLimits() {
+        val testUser = insertTestUser()
+        insertTestSalary(testUser.id.value)
+
+        withApplication(testEnvironment) {
+            handleRequest(
+                HttpMethod.Patch,
+                "/members/salary",
+                withJson(NewSalaryDTO(1337, 69420, Gender.DIVERSE, (0..100).joinToString { "a" }, State.BERLIN))
+            ).apply {
+                assertEquals(HttpStatusCode.BadRequest, response.status())
+            }
+        }
+    }
+
+    @Test
+    fun salaryPatchUnknownSalary() {
+        insertTestUser()
+
+        withApplication(testEnvironment) {
+            handleRequest(
+                HttpMethod.Patch,
+                "/members/salary",
+                withJson(NewSalaryDTO(1337, 69420, Gender.DIVERSE, "Bar-ist in Foo-logy", State.BERLIN))
+            ).apply {
+                assertEquals(HttpStatusCode.NotFound, response.status())
             }
         }
     }
