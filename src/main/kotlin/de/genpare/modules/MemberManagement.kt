@@ -1,6 +1,6 @@
 package de.genpare.modules
 
-import de.genpare.data.*
+import de.genpare.data.dtos.*
 import de.genpare.database.entities.Member
 import io.ktor.application.*
 import io.ktor.features.*

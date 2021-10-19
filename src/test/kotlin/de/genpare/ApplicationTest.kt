@@ -3,7 +3,7 @@ package de.genpare
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonSyntaxException
 import com.typesafe.config.ConfigFactory
-import de.genpare.data.*
+import de.genpare.data.dtos.*
 import de.genpare.database.entities.Member
 import de.genpare.modules.setup
 import io.ktor.config.*
