@@ -23,10 +23,9 @@ val mysqlConnectorVersion: String by project
 dependencies {
     implementation("io.ktor:ktor-server-core:$ktorVersion")
     implementation("io.ktor:ktor-server-netty:$ktorVersion")
+    implementation("io.ktor:ktor-gson:$ktorVersion")
 
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
-
-    implementation("com.beust:klaxon:$klaxonVersion")
 
     implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
     implementation("org.jetbrains.exposed:exposed-dao:$exposedVersion")

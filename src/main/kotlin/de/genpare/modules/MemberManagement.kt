@@ -1,34 +1,38 @@
 package de.genpare.modules
 
-import com.beust.klaxon.Klaxon
 import de.genpare.data.*
 import de.genpare.database.entities.Member
 import io.ktor.application.*
+import io.ktor.features.*
+import io.ktor.gson.*
 import io.ktor.http.*
 import io.ktor.request.*
+import io.ktor.request.ContentTransformationException
 import io.ktor.response.*
 import io.ktor.routing.*
 import io.ktor.util.pipeline.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import kotlin.random.Random
 
-suspend inline fun <reified T> PipelineContext<Unit, ApplicationCall>.receiveOrNull(klaxon: Klaxon): T? {
+suspend inline fun <reified T : Any> PipelineContext<Unit, ApplicationCall>.receiveOrNull(): T? {
     return try {
-        klaxon.parse<T>(call.receiveText())
-    } catch (e: Exception) {
+        call.receive()
+    } catch (e: ContentTransformationException) {
         call.respond(HttpStatusCode.BadRequest, "Invalid JSON payload.")
         null
     }
 }
 
 fun Application.memberManagement() {
-    val klaxon = Klaxon()
+    install(ContentNegotiation) {
+        gson { }
+    }
 
     routing {
         route("/members") {
             route("/session") {
                 get {
-                    val data = receiveOrNull<LoginDTO>(klaxon) ?: return@get
+                    val data = receiveOrNull<LoginDTO>() ?: return@get
                     val member = Member.findByEmail(data.email)
 
                     if (member == null) {
@@ -42,11 +46,11 @@ fun Application.memberManagement() {
                         member.sessionId = session.sessionId
                     }
 
-                    call.respond(klaxon.toJsonString(session))
+                    call.respond(session)
                 }
 
                 delete {
-                    val data = receiveOrNull<LogoutDTO>(klaxon) ?: return@delete
+                    val data = receiveOrNull<LogoutDTO>() ?: return@delete
                     val member = Member.findByEmail(data.email)
 
                     transaction {
@@ -58,7 +62,7 @@ fun Application.memberManagement() {
             }
 
             post {
-                val data = receiveOrNull<MemberDTO>(klaxon) ?: return@post
+                val data = receiveOrNull<MemberDTO>() ?: return@post
 
                 if (data.id != null) {
                     call.respond(HttpStatusCode.BadRequest, "ID mustn't be set for a new user!")
@@ -79,11 +83,11 @@ fun Application.memberManagement() {
                     MemberDTO(member.id.value, member.email, member.name)
                 }
 
-                call.respond(klaxon.toJsonString(newMember))
+                call.respond(newMember)
             }
 
             delete {
-                val data = receiveOrNull<DeleteDTO>(klaxon) ?: return@delete
+                val data = receiveOrNull<DeleteDTO>() ?: return@delete
                 val member = Member.findByEmail(data.email)
 
                 if (member == null) {
@@ -106,7 +110,7 @@ fun Application.memberManagement() {
             }
 
             patch {
-                val data = receiveOrNull<NameChangeDTO>(klaxon) ?: return@patch
+                val data = receiveOrNull<NameChangeDTO>() ?: return@patch
                 val member = Member.findBySessionId(data.sessionId)
 
                 if (member == null) {
