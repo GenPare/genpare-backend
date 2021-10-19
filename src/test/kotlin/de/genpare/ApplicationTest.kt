@@ -2,19 +2,27 @@ package de.genpare
 
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonSyntaxException
+import com.google.gson.TypeAdapter
+import com.google.gson.stream.JsonReader
+import com.google.gson.stream.JsonWriter
 import com.typesafe.config.ConfigFactory
 import de.genpare.data.dtos.*
 import de.genpare.database.entities.Member
 import de.genpare.modules.setup
+import de.genpare.util.LocalDateTypeAdapter
 import io.ktor.config.*
 import io.ktor.http.*
 import io.ktor.server.testing.*
 import org.jetbrains.exposed.sql.transactions.transaction
+import java.time.LocalDate
 import kotlin.test.*
 
 class ApplicationTest {
+    private val birthdate = LocalDate.of(1815, 12, 10)
+
     private val gson = GsonBuilder()
         .serializeNulls()
+        .registerTypeAdapter(LocalDate::class.java, LocalDateTypeAdapter())
         .create()
 
     private val testEnvironment = createTestEnvironment {
@@ -40,6 +48,7 @@ class ApplicationTest {
                 email = "test@example.com"
                 name = "Foo"
                 sessionId = 1337
+                birthdate = LocalDate.of(1815, 12, 10)
             }
         }
     }
@@ -72,7 +81,7 @@ class ApplicationTest {
             handleRequest(
                 HttpMethod.Post,
                 "/members",
-                withJson(MemberDTO(null, "test@example.com", "Foo"))
+                withJson(MemberDTO(null, "test@example.com", "Foo", birthdate))
             ).apply {
                 assertEquals(HttpStatusCode.OK, response.status())
                 assertNotNull(response.content)
@@ -80,6 +89,7 @@ class ApplicationTest {
                 val member = assertDeserialize<MemberDTO>(response.content!!) ?: return@apply
                 assertEquals("test@example.com", member.email)
                 assertEquals("Foo", member.name)
+                assertEquals(birthdate, member.birthdate)
             }
         }
     }
@@ -90,7 +100,7 @@ class ApplicationTest {
             handleRequest(
                 HttpMethod.Post,
                 "/members",
-                withJson(MemberDTO(1337, "test@example.com", "Foo"))
+                withJson(MemberDTO(1337, "test@example.com", "Foo", birthdate))
             ).apply {
                 assertEquals(HttpStatusCode.BadRequest, response.status())
             }
@@ -105,7 +115,7 @@ class ApplicationTest {
             handleRequest(
                 HttpMethod.Post,
                 "/members",
-                withJson(MemberDTO(null, "test@example.com", "Bar"))
+                withJson(MemberDTO(null, "test@example.com", "Bar", birthdate))
             ).apply {
                 assertEquals(HttpStatusCode.Conflict, response.status())
             }

@@ -2,6 +2,7 @@ package de.genpare.modules
 
 import de.genpare.data.dtos.*
 import de.genpare.database.entities.Member
+import de.genpare.util.LocalDateTypeAdapter
 import io.ktor.application.*
 import io.ktor.features.*
 import io.ktor.gson.*
@@ -12,6 +13,7 @@ import io.ktor.response.*
 import io.ktor.routing.*
 import io.ktor.util.pipeline.*
 import org.jetbrains.exposed.sql.transactions.transaction
+import java.time.LocalDate
 import kotlin.random.Random
 
 suspend inline fun <reified T : Any> PipelineContext<Unit, ApplicationCall>.receiveOrNull(): T? {
@@ -25,7 +27,9 @@ suspend inline fun <reified T : Any> PipelineContext<Unit, ApplicationCall>.rece
 
 fun Application.memberManagement() {
     install(ContentNegotiation) {
-        gson { }
+        gson {
+            registerTypeAdapter(LocalDate::class.java, LocalDateTypeAdapter())
+        }
     }
 
     routing {
@@ -78,9 +82,10 @@ fun Application.memberManagement() {
                     val member = Member.newMember {
                         email = data.email
                         name = data.name
+                        birthdate = data.birthdate
                     }
 
-                    MemberDTO(member.id.value, member.email, member.name)
+                    MemberDTO(member.id.value, member.email, member.name, member.birthdate)
                 }
 
                 call.respond(newMember)

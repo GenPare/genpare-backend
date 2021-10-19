@@ -23,4 +23,5 @@ class Member(id: EntityID<Long>) : LongEntity(id) {
     var email by MemberTable.email
     var name by MemberTable.name
     var sessionId by MemberTable.sessionId
+    var birthdate by MemberTable.birthdate
 }
