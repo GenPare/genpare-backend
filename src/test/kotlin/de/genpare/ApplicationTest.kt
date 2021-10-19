@@ -7,7 +7,10 @@ import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonWriter
 import com.typesafe.config.ConfigFactory
 import de.genpare.data.dtos.*
+import de.genpare.data.enums.Gender
+import de.genpare.data.enums.State
 import de.genpare.database.entities.Member
+import de.genpare.database.entities.Salary
 import de.genpare.modules.setup
 import de.genpare.util.LocalDateTypeAdapter
 import io.ktor.config.*
@@ -42,13 +45,24 @@ class ApplicationTest {
             null
         }
 
-    private fun insertTestUser() {
+    private fun insertTestUser() =
         transaction {
             Member.new {
                 email = "test@example.com"
                 name = "Foo"
                 sessionId = 1337
                 birthdate = LocalDate.of(1815, 12, 10)
+            }
+        }
+
+    private fun insertTestSalary(_memberId: Long) {
+        transaction {
+            Salary.new {
+                memberId = _memberId
+                salary = 69420
+                gender = Gender.DIVERSE
+                jobTitle = "Bar-ist in Foo-logy"
+                state = State.BERLIN
             }
         }
     }
@@ -250,6 +264,65 @@ class ApplicationTest {
                 withJson(DeleteDTO("test@example.com", 1337))
             ).apply {
                 assertEquals(HttpStatusCode.NoContent, response.status())
+            }
+        }
+    }
+
+    @Test
+    fun salaryPost() {
+        insertTestUser()
+
+        withApplication(testEnvironment) {
+            handleRequest(
+                HttpMethod.Post,
+                "/members/salary",
+                withJson(SalaryDTO(1337, 69420, Gender.DIVERSE, "Bar-ist in Foo-logy", State.BERLIN))
+            ).apply {
+                assertEquals(HttpStatusCode.NoContent, response.status())
+            }
+        }
+    }
+
+    @Test
+    fun salaryPostInvalidSessionId() {
+        withApplication(testEnvironment) {
+            handleRequest(
+                HttpMethod.Post,
+                "/members/salary",
+                withJson(SalaryDTO(1337, 69420, Gender.DIVERSE, "Bar-ist in Foo-logy", State.BERLIN))
+            ).apply {
+                assertEquals(HttpStatusCode.NotFound, response.status())
+            }
+        }
+    }
+
+    @Test
+    fun salaryPostJobTitleExceedsLimits() {
+        insertTestUser()
+
+        withApplication(testEnvironment) {
+            handleRequest(
+                HttpMethod.Post,
+                "/members/salary",
+                withJson(SalaryDTO(1337, 69420, Gender.DIVERSE, (0..100).joinToString { "a" }, State.BERLIN))
+            ).apply {
+                assertEquals(HttpStatusCode.BadRequest, response.status())
+            }
+        }
+    }
+
+    @Test
+    fun salaryPostAlreadyExists() {
+        val testUser = insertTestUser()
+        insertTestSalary(testUser.id.value)
+
+        withApplication(testEnvironment) {
+            handleRequest(
+                HttpMethod.Post,
+                "/members/salary",
+                withJson(SalaryDTO(1337, 69420, Gender.DIVERSE, "Bar-ist in Foo-logy", State.BERLIN))
+            ).apply {
+                assertEquals(HttpStatusCode.Conflict, response.status())
             }
         }
     }

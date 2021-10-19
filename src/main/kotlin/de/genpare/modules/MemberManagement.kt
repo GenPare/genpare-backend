@@ -2,6 +2,7 @@ package de.genpare.modules
 
 import de.genpare.data.dtos.*
 import de.genpare.database.entities.Member
+import de.genpare.database.entities.Salary
 import de.genpare.util.LocalDateTypeAdapter
 import io.ktor.application.*
 import io.ktor.features.*
@@ -34,37 +35,6 @@ fun Application.memberManagement() {
 
     routing {
         route("/members") {
-            route("/session") {
-                get {
-                    val data = receiveOrNull<LoginDTO>() ?: return@get
-                    val member = Member.findByEmail(data.email)
-
-                    if (member == null) {
-                        call.respond(HttpStatusCode.NotFound, "Unknown user.")
-                        return@get
-                    }
-
-                    val session = SessionDTO(Random.nextLong())
-
-                    transaction {
-                        member.sessionId = session.sessionId
-                    }
-
-                    call.respond(session)
-                }
-
-                delete {
-                    val data = receiveOrNull<LogoutDTO>() ?: return@delete
-                    val member = Member.findByEmail(data.email)
-
-                    transaction {
-                        member?.sessionId = 0
-                    }
-
-                    call.respond(HttpStatusCode.NoContent)
-                }
-            }
-
             post {
                 val data = receiveOrNull<MemberDTO>() ?: return@post
 
@@ -128,6 +98,71 @@ fun Application.memberManagement() {
                 }
 
                 call.respond(HttpStatusCode.NoContent)
+            }
+
+            route("/session") {
+                get {
+                    val data = receiveOrNull<LoginDTO>() ?: return@get
+                    val member = Member.findByEmail(data.email)
+
+                    if (member == null) {
+                        call.respond(HttpStatusCode.NotFound, "Unknown user.")
+                        return@get
+                    }
+
+                    val session = SessionDTO(Random.nextLong())
+
+                    transaction {
+                        member.sessionId = session.sessionId
+                    }
+
+                    call.respond(session)
+                }
+
+                delete {
+                    val data = receiveOrNull<LogoutDTO>() ?: return@delete
+                    val member = Member.findByEmail(data.email)
+
+                    transaction {
+                        member?.sessionId = 0
+                    }
+
+                    call.respond(HttpStatusCode.NoContent)
+                }
+            }
+
+            route("/salary") {
+                post {
+                    val data = receiveOrNull<SalaryDTO>() ?: return@post
+                    val member = Member.findBySessionId(data.sessionId)
+
+                    if (member == null) {
+                        call.respond(HttpStatusCode.NotFound, "Unknown session id.")
+                        return@post
+                    }
+
+                    if (data.jobTitle.length > 63) {
+                        call.respond(HttpStatusCode.BadRequest, "Job title mustn't be longer than 63 characters.")
+                        return@post
+                    }
+
+                    if (Salary.findByMemberId(member.id.value) != null) {
+                        call.respond(HttpStatusCode.Conflict, "Salary entry already exists for this user.")
+                        return@post
+                    }
+
+                    transaction {
+                        Salary.new {
+                            memberId = member.id.value
+                            salary = data.salary
+                            gender = data.gender
+                            jobTitle = data.jobTitle
+                            state = data.state
+                        }
+                    }
+
+                    call.respond(HttpStatusCode.NoContent)
+                }
             }
         }
     }

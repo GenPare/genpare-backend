@@ -1,6 +1,7 @@
 package de.genpare.database
 
 import de.genpare.database.tables.MemberTable
+import de.genpare.database.tables.SalaryTable
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -20,6 +21,7 @@ object Database {
 
         transaction {
             SchemaUtils.create(MemberTable)
+            SchemaUtils.create(SalaryTable)
         }
 
         db
