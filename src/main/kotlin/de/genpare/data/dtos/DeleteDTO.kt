@@ -1,4 +1,4 @@
-package de.genpare.data
+package de.genpare.data.dtos
 
 data class DeleteDTO(
     val email: String,

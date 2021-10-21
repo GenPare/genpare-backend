@@ -1,66 +1,28 @@
 package de.genpare.modules
 
-import de.genpare.data.*
+import de.genpare.data.dtos.*
 import de.genpare.database.entities.Member
+import de.genpare.util.LocalDateTypeAdapter
+import de.genpare.util.Utils.receiveOrNull
 import io.ktor.application.*
 import io.ktor.features.*
 import io.ktor.gson.*
 import io.ktor.http.*
-import io.ktor.request.*
-import io.ktor.request.ContentTransformationException
 import io.ktor.response.*
 import io.ktor.routing.*
-import io.ktor.util.pipeline.*
 import org.jetbrains.exposed.sql.transactions.transaction
+import java.time.LocalDate
 import kotlin.random.Random
-
-suspend inline fun <reified T : Any> PipelineContext<Unit, ApplicationCall>.receiveOrNull(): T? {
-    return try {
-        call.receive()
-    } catch (e: ContentTransformationException) {
-        call.respond(HttpStatusCode.BadRequest, "Invalid JSON payload.")
-        null
-    }
-}
 
 fun Application.memberManagement() {
     install(ContentNegotiation) {
-        gson { }
+        gson {
+            registerTypeAdapter(LocalDate::class.java, LocalDateTypeAdapter())
+        }
     }
 
     routing {
         route("/members") {
-            route("/session") {
-                get {
-                    val data = receiveOrNull<LoginDTO>() ?: return@get
-                    val member = Member.findByEmail(data.email)
-
-                    if (member == null) {
-                        call.respond(HttpStatusCode.NotFound, "Unknown user.")
-                        return@get
-                    }
-
-                    val session = SessionDTO(Random.nextLong())
-
-                    transaction {
-                        member.sessionId = session.sessionId
-                    }
-
-                    call.respond(session)
-                }
-
-                delete {
-                    val data = receiveOrNull<LogoutDTO>() ?: return@delete
-                    val member = Member.findByEmail(data.email)
-
-                    transaction {
-                        member?.sessionId = 0
-                    }
-
-                    call.respond(HttpStatusCode.NoContent)
-                }
-            }
-
             post {
                 val data = receiveOrNull<MemberDTO>() ?: return@post
 
@@ -78,9 +40,10 @@ fun Application.memberManagement() {
                     val member = Member.newMember {
                         email = data.email
                         name = data.name
+                        birthdate = data.birthdate
                     }
 
-                    MemberDTO(member.id.value, member.email, member.name)
+                    MemberDTO(member.id.value, member.email, member.name, member.birthdate)
                 }
 
                 call.respond(newMember)
@@ -123,6 +86,37 @@ fun Application.memberManagement() {
                 }
 
                 call.respond(HttpStatusCode.NoContent)
+            }
+
+            route("/session") {
+                get {
+                    val data = receiveOrNull<LoginDTO>() ?: return@get
+                    val member = Member.findByEmail(data.email)
+
+                    if (member == null) {
+                        call.respond(HttpStatusCode.NotFound, "Unknown user.")
+                        return@get
+                    }
+
+                    val session = SessionDTO(Random.nextLong())
+
+                    transaction {
+                        member.sessionId = session.sessionId
+                    }
+
+                    call.respond(session)
+                }
+
+                delete {
+                    val data = receiveOrNull<LogoutDTO>() ?: return@delete
+                    val member = Member.findByEmail(data.email)
+
+                    transaction {
+                        member?.sessionId = 0
+                    }
+
+                    call.respond(HttpStatusCode.NoContent)
+                }
             }
         }
     }
