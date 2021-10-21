@@ -273,7 +273,7 @@ class ApplicationTest {
             val salary = NewSalaryDTO(1337, 69420, Gender.DIVERSE, "Bar-ist in Foo-logy", State.BERLIN)
             handleRequest(
                 HttpMethod.Post,
-                "/members/salary",
+                "/salary",
                 withJson(salary)
             ).apply {
                 assertEquals(HttpStatusCode.OK, response.status())
@@ -290,7 +290,7 @@ class ApplicationTest {
         withApplication(testEnvironment) {
             handleRequest(
                 HttpMethod.Post,
-                "/members/salary",
+                "/salary",
                 withJson(NewSalaryDTO(1337, 69420, Gender.DIVERSE, "Bar-ist in Foo-logy", State.BERLIN))
             ).apply {
                 assertEquals(HttpStatusCode.NotFound, response.status())
@@ -305,7 +305,7 @@ class ApplicationTest {
         withApplication(testEnvironment) {
             handleRequest(
                 HttpMethod.Post,
-                "/members/salary",
+                "/salary",
                 withJson(NewSalaryDTO(1337, 69420, Gender.DIVERSE, (0..100).joinToString { "a" }, State.BERLIN))
             ).apply {
                 assertEquals(HttpStatusCode.BadRequest, response.status())
@@ -321,7 +321,7 @@ class ApplicationTest {
         withApplication(testEnvironment) {
             handleRequest(
                 HttpMethod.Post,
-                "/members/salary",
+                "/salary",
                 withJson(NewSalaryDTO(1337, 69420, Gender.DIVERSE, "Bar-ist in Foo-logy", State.BERLIN))
             ).apply {
                 assertEquals(HttpStatusCode.Conflict, response.status())
@@ -333,7 +333,7 @@ class ApplicationTest {
         withApplication(testEnvironment) {
             handleRequest(
                 HttpMethod.Patch,
-                "/members/salary",
+                "/salary",
                 withJson(salary)
             ).apply {
                 assertEquals(HttpStatusCode.OK, response.status())
@@ -384,7 +384,7 @@ class ApplicationTest {
         withApplication(testEnvironment) {
             handleRequest(
                 HttpMethod.Patch,
-                "/members/salary",
+                "/salary",
                 withJson(ModifySalaryDTO(1337, 69420, Gender.DIVERSE, "Bar-ist in Foo-logy", State.BERLIN))
             ).apply {
                 assertEquals(HttpStatusCode.NotFound, response.status())
@@ -400,7 +400,7 @@ class ApplicationTest {
         withApplication(testEnvironment) {
             handleRequest(
                 HttpMethod.Patch,
-                "/members/salary",
+                "/salary",
                 withJson(NewSalaryDTO(1337, 69420, Gender.DIVERSE, (0..100).joinToString { "a" }, State.BERLIN))
             ).apply {
                 assertEquals(HttpStatusCode.BadRequest, response.status())
@@ -415,7 +415,7 @@ class ApplicationTest {
         withApplication(testEnvironment) {
             handleRequest(
                 HttpMethod.Patch,
-                "/members/salary",
+                "/salary",
                 withJson(NewSalaryDTO(1337, 69420, Gender.DIVERSE, "Bar-ist in Foo-logy", State.BERLIN))
             ).apply {
                 assertEquals(HttpStatusCode.NotFound, response.status())
