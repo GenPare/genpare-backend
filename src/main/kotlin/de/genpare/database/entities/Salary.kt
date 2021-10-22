@@ -17,4 +17,5 @@ class Salary(id: EntityID<Long>) : LongEntity(id) {
     var gender by SalaryTable.gender
     var jobTitle by SalaryTable.jobTitle
     var state by SalaryTable.state
+    var levelOfEducation by SalaryTable.levelOfEducation
 }
