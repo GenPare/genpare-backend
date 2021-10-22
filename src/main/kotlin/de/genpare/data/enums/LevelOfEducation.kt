@@ -1,0 +1,20 @@
+package de.genpare.data.enums
+
+enum class LevelOfEducation {
+    NONE,
+    HAUPTSCHULE,
+    MITTLERE_REIFE,
+    ABITUR,
+    FACHHOCHSCHULREIFE,
+    DIPLOM,
+    MAGISTER,
+    BACHELOR,
+    MASTER,
+    DOKTOR,
+    GESELLE,
+    MEISTER,
+    EINFACHER_DIENST,
+    MITTLERER_DIENST,
+    GEHOBENER_DIENST,
+    HOEHERER_DIENST
+}

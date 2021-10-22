@@ -41,9 +41,10 @@ fun Application.dataManagement() {
                         gender = data.gender
                         jobTitle = data.jobTitle
                         state = data.state
+                        levelOfEducation = data.levelOfEducation
                     }
 
-                    NewSalaryDTO(data.sessionId, salary.salary, salary.gender, salary.jobTitle, salary.state)
+                    NewSalaryDTO(data.sessionId, salary.salary, salary.gender, salary.jobTitle, salary.state, salary.levelOfEducation)
                 }
 
                 call.respond(newSalary)
@@ -66,8 +67,9 @@ fun Application.dataManagement() {
                     if (data.gender != null) salary.gender = data.gender
                     if (data.jobTitle != null) salary.jobTitle = data.jobTitle
                     if (data.state != null) salary.state = data.state
+                    if (data.levelOfEducation != null) salary.levelOfEducation = data.levelOfEducation
 
-                    ModifySalaryDTO(data.sessionId, salary.salary, salary.gender, salary.jobTitle, salary.state)
+                    ModifySalaryDTO(data.sessionId, salary.salary, salary.gender, salary.jobTitle, salary.state, salary.levelOfEducation)
                 }
 
                 call.respond(newSalary)
