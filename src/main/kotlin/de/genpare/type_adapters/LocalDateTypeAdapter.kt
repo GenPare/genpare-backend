@@ -1,11 +1,11 @@
-package de.genpare.util
+package de.genpare.type_adapters
 
 import com.google.gson.TypeAdapter
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonWriter
 import java.time.LocalDate
 
-class LocalDateTypeAdapter : TypeAdapter<LocalDate>() {
+object LocalDateTypeAdapter : TypeAdapter<LocalDate>() {
     override fun write(writer: JsonWriter, value: LocalDate?) {
         if (value == null) {
             writer.nullValue()
