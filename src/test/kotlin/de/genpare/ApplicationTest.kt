@@ -10,12 +10,19 @@ import de.genpare.data.enums.State
 import de.genpare.database.entities.Member
 import de.genpare.database.entities.Salary
 import de.genpare.modules.setup
-import de.genpare.util.LocalDateTypeAdapter
+import de.genpare.query.filters.AbstractFilter
+import de.genpare.query.filters.JobTitleFilter
+import de.genpare.query.result_transformers.AbstractResultTransformer
+import de.genpare.query.result_transformers.AverageResultTransformer
+import de.genpare.type_adapters.*
 import io.ktor.config.*
 import io.ktor.http.*
 import io.ktor.server.testing.*
+import org.jetbrains.exposed.sql.QueryBuilder
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.time.LocalDate
+import kotlin.math.absoluteValue
+import kotlin.random.Random
 import kotlin.test.*
 
 class ApplicationTest {
@@ -41,7 +48,11 @@ class ApplicationTest {
 
     private val gson = GsonBuilder()
         .serializeNulls()
-        .registerTypeAdapter(LocalDate::class.java, LocalDateTypeAdapter())
+        .registerTypeAdapter(LocalDate::class.java, LocalDateTypeAdapter)
+        .registerTypeAdapter(AbstractResultTransformer::class.java, ResultTransformerDeserializer)
+        .registerTypeAdapter(AbstractFilter::class.java, FilterSerializer)
+        .registerTypeAdapter(AbstractFilter::class.java, FilterDeserializer)
+        .registerTypeAdapter(AbstractResultTransformer.AbstractResult::class.java, ResultDeserializer)
         .create()
 
     private val testEnvironment = createTestEnvironment {
@@ -59,6 +70,12 @@ class ApplicationTest {
         } catch (e: JsonSyntaxException) {
             assertTrue(false, message)
             null
+        }
+
+    private fun assertFilterSQL(filter: AbstractFilter, stmt: String) =
+        QueryBuilder(false).apply {
+            transaction { filter.op.toQueryBuilder(this@apply) }
+            assertEquals(toString(), stmt)
         }
 
     private fun insertTestUser() =
@@ -80,6 +97,14 @@ class ApplicationTest {
                 jobTitle = testSalary.jobTitle
                 state = testSalary.state
                 levelOfEducation = testSalary.levelOfEducation
+            }
+        }
+    }
+
+    private fun insertTestSalaries() {
+        transaction {
+            Salary.new {
+                memberId = Random.nextLong().absoluteValue
             }
         }
     }
@@ -297,8 +322,10 @@ class ApplicationTest {
             ).apply {
                 assertEquals(HttpStatusCode.OK, response.status())
                 assertNotNull(response.content)
+                val content = response.content!!
+                println(content)
 
-                val newSalary = assertDeserialize<NewSalaryDTO>(response.content!!) ?: return@apply
+                val newSalary = assertDeserialize<NewSalaryDTO>(content) ?: return@apply
                 assertEquals(testSalary, newSalary)
             }
         }
@@ -448,5 +475,10 @@ class ApplicationTest {
                 assertEquals(HttpStatusCode.NotFound, response.status())
             }
         }
+    }
+
+    @Test
+    fun jobTitleFilter() {
+        assertFilterSQL(JobTitleFilter("foobar"), "Salary.job_title = 'foobar'")
     }
 }
