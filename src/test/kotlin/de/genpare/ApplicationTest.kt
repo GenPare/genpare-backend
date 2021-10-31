@@ -311,13 +311,32 @@ class ApplicationTest {
     }
 
     @Test
-    fun salaryPostSucceeds() {
+    fun salaryGetSucceeds() {
+        val testUser = insertTestUser()
+        insertTestSalary(testUser.id.value)
+
+        withApplication(testEnvironment) {
+            handleRequest(
+                HttpMethod.Get,
+                "/salary/own",
+                withJson(FetchSalaryDTO(testUser.sessionId))
+            ).apply {
+                assertEquals(HttpStatusCode.OK, response.status())
+                assertNotNull(response.content)
+
+                assertDeserialize<SalaryDTO>(response.content!!) ?: return@apply
+            }
+        }
+    }
+
+    @Test
+    fun salaryPutSucceeds() {
         insertTestUser()
 
         withApplication(testEnvironment) {
             handleRequest(
-                HttpMethod.Post,
-                "/salary",
+                HttpMethod.Put,
+                "/salary/own",
                 withJson(testSalary)
             ).apply {
                 assertEquals(HttpStatusCode.OK, response.status())
@@ -332,11 +351,11 @@ class ApplicationTest {
     }
 
     @Test
-    fun salaryPostInvalidSessionId() {
+    fun salaryPutInvalidSessionId() {
         withApplication(testEnvironment) {
             handleRequest(
-                HttpMethod.Post,
-                "/salary",
+                HttpMethod.Put,
+                "/salary/own",
                 withJson(testSalary)
             ).apply {
                 assertEquals(HttpStatusCode.NotFound, response.status())
@@ -345,13 +364,13 @@ class ApplicationTest {
     }
 
     @Test
-    fun salaryPostJobTitleExceedsLimits() {
+    fun salaryPutJobTitleExceedsLimits() {
         insertTestUser()
 
         withApplication(testEnvironment) {
             handleRequest(
-                HttpMethod.Post,
-                "/salary",
+                HttpMethod.Put,
+                "/salary/own",
                 withJson(testSalary.copy(jobTitle = (0..100).joinToString { "a" }))
             ).apply {
                 assertEquals(HttpStatusCode.BadRequest, response.status())
@@ -360,14 +379,14 @@ class ApplicationTest {
     }
 
     @Test
-    fun salaryPostAlreadyExists() {
+    fun salaryPutAlreadyExists() {
         val testUser = insertTestUser()
         insertTestSalary(testUser.id.value)
 
         withApplication(testEnvironment) {
             handleRequest(
-                HttpMethod.Post,
-                "/salary",
+                HttpMethod.Put,
+                "/salary/own",
                 withJson(testSalary)
             ).apply {
                 assertEquals(HttpStatusCode.Conflict, response.status())
@@ -379,7 +398,7 @@ class ApplicationTest {
         withApplication(testEnvironment) {
             handleRequest(
                 HttpMethod.Patch,
-                "/salary",
+                "/salary/own",
                 withJson(salary)
             ).apply {
                 assertEquals(HttpStatusCode.OK, response.status())
@@ -438,7 +457,7 @@ class ApplicationTest {
         withApplication(testEnvironment) {
             handleRequest(
                 HttpMethod.Patch,
-                "/salary",
+                "/salary/own",
                 withJson(testModifySalary)
             ).apply {
                 assertEquals(HttpStatusCode.NotFound, response.status())
@@ -454,7 +473,7 @@ class ApplicationTest {
         withApplication(testEnvironment) {
             handleRequest(
                 HttpMethod.Patch,
-                "/salary",
+                "/salary/own",
                 withJson(testSalary.copy(jobTitle = (0..100).joinToString { "a" }))
             ).apply {
                 assertEquals(HttpStatusCode.BadRequest, response.status())
@@ -469,7 +488,7 @@ class ApplicationTest {
         withApplication(testEnvironment) {
             handleRequest(
                 HttpMethod.Patch,
-                "/salary",
+                "/salary/own",
                 withJson(testModifySalary)
             ).apply {
                 assertEquals(HttpStatusCode.NotFound, response.status())

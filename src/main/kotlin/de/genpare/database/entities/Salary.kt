@@ -1,5 +1,6 @@
 package de.genpare.database.entities
 
+import de.genpare.data.dtos.SalaryDTO
 import de.genpare.database.tables.SalaryTable
 import org.jetbrains.exposed.dao.LongEntity
 import org.jetbrains.exposed.dao.LongEntityClass
@@ -18,4 +19,7 @@ class Salary(id: EntityID<Long>) : LongEntity(id) {
     var jobTitle by SalaryTable.jobTitle
     var state by SalaryTable.state
     var levelOfEducation by SalaryTable.levelOfEducation
+
+    fun toDTO() =
+        SalaryDTO(salary, gender, jobTitle, state, levelOfEducation)
 }

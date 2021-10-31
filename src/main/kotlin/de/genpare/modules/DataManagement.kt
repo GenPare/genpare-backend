@@ -1,9 +1,6 @@
 package de.genpare.modules
 
-import de.genpare.data.dtos.FilterListDTO
-import de.genpare.data.dtos.ModifySalaryDTO
-import de.genpare.data.dtos.NewSalaryDTO
-import de.genpare.data.dtos.ResultsDTO
+import de.genpare.data.dtos.*
 import de.genpare.data.enums.Gender
 import de.genpare.data.enums.LevelOfEducation
 import de.genpare.data.enums.State
@@ -82,70 +79,85 @@ fun Application.dataManagement() {
                 call.respond(results)
             }
 
-            post {
-                val data = receiveOrNull<NewSalaryDTO>(this) ?: return@post
-                val member = getMemberBySessionId(this, data.sessionId) ?: return@post
+            route("/own") {
+                get {
+                    val data = receiveOrNull<FetchSalaryDTO>(this) ?: return@get
+                    val member = getMemberBySessionId(this, data.sessionId) ?: return@get
+                    val salary = Salary.findByMemberId(member.id.value)
 
-                if (Salary.findByMemberId(member.id.value) != null) {
-                    call.respond(HttpStatusCode.Conflict, "Salary entry already exists for this user.")
-                    return@post
-                }
-
-                checkJobTitleLength(this, data.jobTitle) ?: return@post
-
-                val newSalary = transaction {
-                    val salary = Salary.new {
-                        memberId = member.id.value
-                        salary = data.salary
-                        gender = data.gender
-                        jobTitle = data.jobTitle
-                        state = data.state
-                        levelOfEducation = data.levelOfEducation
+                    if (salary == null) {
+                        call.respond(HttpStatusCode.NotFound, "No salary data for this user was found.")
+                        return@get
                     }
 
-                    NewSalaryDTO(
-                        data.sessionId,
-                        salary.salary,
-                        salary.gender,
-                        salary.jobTitle,
-                        salary.state,
-                        salary.levelOfEducation
-                    )
+                    call.respond(salary.toDTO())
                 }
 
-                call.respond(newSalary)
-            }
+                put {
+                    val data = receiveOrNull<NewSalaryDTO>(this) ?: return@put
+                    val member = getMemberBySessionId(this, data.sessionId) ?: return@put
 
-            patch {
-                val data = receiveOrNull<ModifySalaryDTO>(this) ?: return@patch
-                val member = getMemberBySessionId(this, data.sessionId) ?: return@patch
-                val salary = Salary.findByMemberId(member.id.value)
+                    if (Salary.findByMemberId(member.id.value) != null) {
+                        call.respond(HttpStatusCode.Conflict, "Salary entry already exists for this user.")
+                        return@put
+                    }
 
-                if (salary == null) {
-                    call.respond(HttpStatusCode.NotFound, "No existing salary entry was found.")
-                    return@patch
+                    checkJobTitleLength(this, data.jobTitle) ?: return@put
+
+                    val newSalary = transaction {
+                        val salary = Salary.new {
+                            memberId = member.id.value
+                            salary = data.salary
+                            gender = data.gender
+                            jobTitle = data.jobTitle
+                            state = data.state
+                            levelOfEducation = data.levelOfEducation
+                        }
+
+                        NewSalaryDTO(
+                            data.sessionId,
+                            salary.salary,
+                            salary.gender,
+                            salary.jobTitle,
+                            salary.state,
+                            salary.levelOfEducation
+                        )
+                    }
+
+                    call.respond(newSalary)
                 }
 
-                checkJobTitleLength(this, data.jobTitle) ?: return@patch
+                patch {
+                    val data = receiveOrNull<ModifySalaryDTO>(this) ?: return@patch
+                    val member = getMemberBySessionId(this, data.sessionId) ?: return@patch
+                    val salary = Salary.findByMemberId(member.id.value)
 
-                val newSalary = transaction {
-                    if (data.salary != null) salary.salary = data.salary
-                    if (data.gender != null) salary.gender = data.gender
-                    if (data.jobTitle != null) salary.jobTitle = data.jobTitle
-                    if (data.state != null) salary.state = data.state
-                    if (data.levelOfEducation != null) salary.levelOfEducation = data.levelOfEducation
+                    if (salary == null) {
+                        call.respond(HttpStatusCode.NotFound, "No existing salary entry was found.")
+                        return@patch
+                    }
 
-                    ModifySalaryDTO(
-                        data.sessionId,
-                        salary.salary,
-                        salary.gender,
-                        salary.jobTitle,
-                        salary.state,
-                        salary.levelOfEducation
-                    )
+                    checkJobTitleLength(this, data.jobTitle) ?: return@patch
+
+                    val newSalary = transaction {
+                        if (data.salary != null) salary.salary = data.salary
+                        if (data.gender != null) salary.gender = data.gender
+                        if (data.jobTitle != null) salary.jobTitle = data.jobTitle
+                        if (data.state != null) salary.state = data.state
+                        if (data.levelOfEducation != null) salary.levelOfEducation = data.levelOfEducation
+
+                        ModifySalaryDTO(
+                            data.sessionId,
+                            salary.salary,
+                            salary.gender,
+                            salary.jobTitle,
+                            salary.state,
+                            salary.levelOfEducation
+                        )
+                    }
+
+                    call.respond(newSalary)
                 }
-
-                call.respond(newSalary)
             }
         }
     }
