@@ -2,7 +2,12 @@ package de.genpare.modules
 
 import de.genpare.data.dtos.*
 import de.genpare.database.entities.Member
-import de.genpare.util.LocalDateTypeAdapter
+import de.genpare.query.filters.AbstractFilter
+import de.genpare.query.result_transformers.AbstractResultTransformer
+import de.genpare.type_adapters.FilterDeserializer
+import de.genpare.type_adapters.IntRangeSerializer
+import de.genpare.type_adapters.LocalDateTypeAdapter
+import de.genpare.type_adapters.ResultTransformerDeserializer
 import de.genpare.util.Utils.receiveOrNull
 import io.ktor.application.*
 import io.ktor.features.*
@@ -17,14 +22,19 @@ import kotlin.random.Random
 fun Application.memberManagement() {
     install(ContentNegotiation) {
         gson {
-            registerTypeAdapter(LocalDate::class.java, LocalDateTypeAdapter())
+            registerTypeAdapter(LocalDate::class.java, LocalDateTypeAdapter)
+            registerTypeAdapter(AbstractResultTransformer::class.java, ResultTransformerDeserializer)
+            registerTypeAdapter(AbstractFilter::class.java, FilterDeserializer)
+            registerTypeAdapter(IntRange::class.java, IntRangeSerializer)
+
+            serializeNulls()
         }
     }
 
     routing {
         route("/members") {
             post {
-                val data = receiveOrNull<MemberDTO>() ?: return@post
+                val data = receiveOrNull<MemberDTO>(this) ?: return@post
 
                 if (data.id != null) {
                     call.respond(HttpStatusCode.BadRequest, "ID mustn't be set for a new user!")
@@ -50,7 +60,7 @@ fun Application.memberManagement() {
             }
 
             delete {
-                val data = receiveOrNull<DeleteDTO>() ?: return@delete
+                val data = receiveOrNull<DeleteDTO>(this) ?: return@delete
                 val member = Member.findByEmail(data.email)
 
                 if (member == null) {
@@ -73,7 +83,7 @@ fun Application.memberManagement() {
             }
 
             patch {
-                val data = receiveOrNull<NameChangeDTO>() ?: return@patch
+                val data = receiveOrNull<NameChangeDTO>(this) ?: return@patch
                 val member = Member.findBySessionId(data.sessionId)
 
                 if (member == null) {
@@ -90,7 +100,7 @@ fun Application.memberManagement() {
 
             route("/session") {
                 get {
-                    val data = receiveOrNull<LoginDTO>() ?: return@get
+                    val data = receiveOrNull<LoginDTO>(this) ?: return@get
                     val member = Member.findByEmail(data.email)
 
                     if (member == null) {
@@ -108,7 +118,7 @@ fun Application.memberManagement() {
                 }
 
                 delete {
-                    val data = receiveOrNull<LogoutDTO>() ?: return@delete
+                    val data = receiveOrNull<LogoutDTO>(this) ?: return@delete
                     val member = Member.findByEmail(data.email)
 
                     transaction {
