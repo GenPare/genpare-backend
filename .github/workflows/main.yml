@@ -13,6 +13,12 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
+            - name: Start MariaDB
+              uses: getong/mariadb-action@v1.1
+              with:
+                  mysql database: genpare
+                  mysql user: genpare
+                  mysql password: testing123
             - uses: actions/checkout@v2
             - name: Set up JDK 16
               uses: actions/setup-java@v1
