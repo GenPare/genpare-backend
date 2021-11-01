@@ -24,7 +24,7 @@ object Utils {
     suspend inline fun <reified T : Any> receiveOrNull(context: PipelineContext<Unit, ApplicationCall>): T? =
         try {
             context.call.receive()
-        } catch (e: ContentTransformationException) {
+        } catch (e: Exception) {
             context.call.respond(HttpStatusCode.BadRequest, "Invalid JSON payload.")
             null
         }

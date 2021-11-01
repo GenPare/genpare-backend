@@ -1,13 +1,15 @@
 package de.genpare.modules
 
-import de.genpare.data.dtos.*
+import de.genpare.data.dtos.DeleteDTO
+import de.genpare.data.dtos.MemberDTO
+import de.genpare.data.dtos.NameChangeDTO
+import de.genpare.data.dtos.SessionDTO
+import de.genpare.data.enums.Gender
+import de.genpare.data.enums.State
 import de.genpare.database.entities.Member
 import de.genpare.query.filters.AbstractFilter
 import de.genpare.query.result_transformers.AbstractResultTransformer
-import de.genpare.type_adapters.FilterDeserializer
-import de.genpare.type_adapters.IntRangeSerializer
-import de.genpare.type_adapters.LocalDateTypeAdapter
-import de.genpare.type_adapters.ResultTransformerDeserializer
+import de.genpare.type_adapters.*
 import de.genpare.util.Utils
 import de.genpare.util.Utils.queryParameterOrError
 import de.genpare.util.Utils.receiveOrNull
@@ -28,6 +30,9 @@ fun Application.memberManagement() {
             registerTypeAdapter(AbstractResultTransformer::class.java, ResultTransformerDeserializer)
             registerTypeAdapter(AbstractFilter::class.java, FilterDeserializer)
             registerTypeAdapter(IntRange::class.java, IntRangeSerializer)
+            registerTypeAdapter(Gender::class.java, GenderDeserializer)
+            registerTypeAdapter(LevelOfEducationDeserializer::class.java, LevelOfEducationDeserializer)
+            registerTypeAdapter(State::class.java, StateDeserializer)
 
             serializeNulls()
         }

@@ -21,8 +21,8 @@ import org.jetbrains.exposed.sql.AndOp
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 
-suspend fun checkJobTitleLength(context: PipelineContext<Unit, ApplicationCall>, jobTitle: String?) =
-    if ((jobTitle?.length ?: 64) > 63) {
+suspend fun checkJobTitleLength(context: PipelineContext<Unit, ApplicationCall>, jobTitle: String) =
+    if (jobTitle.length > 63) {
         context.call.respond(
             HttpStatusCode.BadRequest,
             "Job title mustn't be longer than 63 characters."
@@ -148,7 +148,8 @@ fun Application.dataManagement() {
                         return@patch
                     }
 
-                    checkJobTitleLength(this, data.jobTitle) ?: return@patch
+                    if (data.jobTitle != null)
+                        checkJobTitleLength(this, data.jobTitle) ?: return@patch
 
                     val newSalary = transaction {
                         if (data.salary != null) salary.salary = data.salary
