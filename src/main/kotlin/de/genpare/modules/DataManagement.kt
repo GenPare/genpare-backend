@@ -80,6 +80,16 @@ fun Application.dataManagement() {
                 call.respond(results)
             }
 
+            route("/info"){
+                get {
+                    val result = transaction {
+                        Salary.all().map { it.jobTitle }.distinct()
+                    }
+
+                    call.respond(result)
+                }
+            }
+
             route("/own") {
                 get {
                     val sessionId = queryParameterOrError(this, "sessionId")
