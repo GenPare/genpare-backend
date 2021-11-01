@@ -67,7 +67,7 @@ fun Application.dataManagement() {
                             IntermediateResult(
                                 age = it[MemberTable.birthdate].toAge(),
                                 salary = it[SalaryTable.salary],
-                                gender = it[SalaryTable.gender],
+                                gender = it[MemberTable.gender],
                                 jobTitle = it[SalaryTable.jobTitle],
                                 state = it[SalaryTable.state],
                                 levelOfEducation = it[SalaryTable.levelOfEducation]
@@ -111,7 +111,6 @@ fun Application.dataManagement() {
                         val salary = Salary.new {
                             memberId = member.id.value
                             salary = data.salary
-                            gender = data.gender
                             jobTitle = data.jobTitle
                             state = data.state
                             levelOfEducation = data.levelOfEducation
@@ -120,7 +119,6 @@ fun Application.dataManagement() {
                         NewSalaryDTO(
                             data.sessionId,
                             salary.salary,
-                            salary.gender,
                             salary.jobTitle,
                             salary.state,
                             salary.levelOfEducation
@@ -144,7 +142,6 @@ fun Application.dataManagement() {
 
                     val newSalary = transaction {
                         if (data.salary != null) salary.salary = data.salary
-                        if (data.gender != null) salary.gender = data.gender
                         if (data.jobTitle != null) salary.jobTitle = data.jobTitle
                         if (data.state != null) salary.state = data.state
                         if (data.levelOfEducation != null) salary.levelOfEducation = data.levelOfEducation
@@ -152,7 +149,6 @@ fun Application.dataManagement() {
                         ModifySalaryDTO(
                             data.sessionId,
                             salary.salary,
-                            salary.gender,
                             salary.jobTitle,
                             salary.state,
                             salary.levelOfEducation

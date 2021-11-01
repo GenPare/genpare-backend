@@ -2,6 +2,7 @@ package de.genpare.database.entities
 
 import de.genpare.data.dtos.MemberDTO
 import de.genpare.database.tables.MemberTable
+import de.genpare.database.tables.SalaryTable
 import org.jetbrains.exposed.dao.LongEntity
 import org.jetbrains.exposed.dao.LongEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
@@ -25,6 +26,7 @@ class Member(id: EntityID<Long>) : LongEntity(id) {
     var name by MemberTable.name
     var sessionId by MemberTable.sessionId
     var birthdate by MemberTable.birthdate
+    var gender by MemberTable.gender
 
     fun toDTO() =
         MemberDTO(sessionId, email, name, birthdate)
