@@ -8,6 +8,7 @@ import de.genpare.type_adapters.FilterDeserializer
 import de.genpare.type_adapters.IntRangeSerializer
 import de.genpare.type_adapters.LocalDateTypeAdapter
 import de.genpare.type_adapters.ResultTransformerDeserializer
+import de.genpare.util.Utils
 import de.genpare.util.Utils.queryParameterOrError
 import de.genpare.util.Utils.receiveOrNull
 import io.ktor.application.*
@@ -109,6 +110,15 @@ fun Application.memberManagement() {
                 }
 
                 call.respond(HttpStatusCode.NoContent)
+            }
+
+            get {
+                val sessionId = queryParameterOrError(this, "sessionId")
+                    ?.let(String::toLong) ?: return@get
+
+                val member = Utils.getMemberBySessionId(this, sessionId) ?: return@get
+
+                call.respond(member.toDTO())
             }
 
             route("/session") {
