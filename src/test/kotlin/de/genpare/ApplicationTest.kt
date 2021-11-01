@@ -70,7 +70,7 @@ class ApplicationTest {
             null
         }
 
-    private fun assertFilterSQL(filter: AbstractFilter, stmt: String) =
+    private fun assertFilterSQL(stmt: String, filter: AbstractFilter) =
         QueryBuilder(false).apply {
             transaction { filter.op.toQueryBuilder(this@apply) }
             assertEquals(stmt, toString())
@@ -483,6 +483,6 @@ class ApplicationTest {
 
     @Test
     fun jobTitleFilter() {
-        assertFilterSQL(JobTitleFilter("foobar"), "salary.job_title = 'foobar'")
+        assertFilterSQL("salary.job_title = 'foobar'", JobTitleFilter("foobar"))
     }
 }

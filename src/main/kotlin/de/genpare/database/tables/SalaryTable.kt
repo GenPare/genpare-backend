@@ -1,9 +1,8 @@
 package de.genpare.database.tables
 
-import de.genpare.util.Utils.enumColumnDefinition
-import de.genpare.data.enums.Gender
 import de.genpare.data.enums.LevelOfEducation
 import de.genpare.data.enums.State
+import de.genpare.util.Utils.enumColumnDefinition
 import org.jetbrains.exposed.dao.id.LongIdTable
 
 object SalaryTable : LongIdTable() {

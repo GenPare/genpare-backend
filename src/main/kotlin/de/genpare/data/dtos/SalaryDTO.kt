@@ -1,6 +1,5 @@
 package de.genpare.data.dtos
 
-import de.genpare.data.enums.Gender
 import de.genpare.data.enums.LevelOfEducation
 import de.genpare.data.enums.State
 
