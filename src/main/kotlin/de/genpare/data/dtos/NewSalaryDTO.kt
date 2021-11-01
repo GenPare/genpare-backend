@@ -7,7 +7,6 @@ import de.genpare.data.enums.State
 data class NewSalaryDTO(
     val sessionId: Long,
     val salary: Int,
-    val gender: Gender,
     val jobTitle: String,
     val state: State,
     val levelOfEducation: LevelOfEducation

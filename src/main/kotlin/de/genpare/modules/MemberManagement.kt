@@ -63,9 +63,10 @@ fun Application.memberManagement() {
                         email = data.email
                         name = data.name
                         birthdate = data.birthdate
+                        gender = data.gender
                     }
 
-                    MemberDTO(member.id.value, member.email, member.name, member.birthdate)
+                    MemberDTO(member.id.value, member.email, member.name, member.birthdate, member.gender)
                 }
 
                 call.respond(newMember)
