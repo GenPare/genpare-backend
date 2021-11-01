@@ -9,6 +9,7 @@ import de.genpare.database.tables.MemberTable
 import de.genpare.database.tables.SalaryTable
 import de.genpare.query.filters.AbstractFilter
 import de.genpare.util.Utils.getMemberBySessionId
+import de.genpare.util.Utils.queryParameterOrError
 import de.genpare.util.Utils.receiveOrNull
 import de.genpare.util.Utils.toAge
 import io.ktor.application.*
@@ -44,17 +45,17 @@ data class IntermediateResult(
 fun Application.dataManagement() {
     routing {
         route("/salary") {
-            get {
-                val data = receiveOrNull<FilterListDTO>(this) ?: return@get
+            post {
+                val data = receiveOrNull<FilterListDTO>(this) ?: return@post
 
                 if (data.filters.isEmpty()) {
                     call.respond(HttpStatusCode.BadRequest, "Filters can't be empty!")
-                    return@get
+                    return@post
                 }
 
                 if (data.resultTransformers.isEmpty()) {
                     call.respond(HttpStatusCode.BadRequest, "Result transformers can't be empty!")
-                    return@get
+                    return@post
                 }
 
                 val results = transaction {
@@ -81,8 +82,10 @@ fun Application.dataManagement() {
 
             route("/own") {
                 get {
-                    val data = receiveOrNull<FetchSalaryDTO>(this) ?: return@get
-                    val member = getMemberBySessionId(this, data.sessionId) ?: return@get
+                    val sessionId = queryParameterOrError(this, "sessionId")
+                        ?.let(String::toLong) ?: return@get
+
+                    val member = getMemberBySessionId(this, sessionId) ?: return@get
                     val salary = Salary.findByMemberId(member.id.value)
 
                     if (salary == null) {

@@ -8,6 +8,7 @@ import de.genpare.type_adapters.FilterDeserializer
 import de.genpare.type_adapters.IntRangeSerializer
 import de.genpare.type_adapters.LocalDateTypeAdapter
 import de.genpare.type_adapters.ResultTransformerDeserializer
+import de.genpare.util.Utils.queryParameterOrError
 import de.genpare.util.Utils.receiveOrNull
 import io.ktor.application.*
 import io.ktor.features.*
@@ -111,8 +112,8 @@ fun Application.memberManagement() {
 
             route("/session") {
                 get {
-                    val data = receiveOrNull<LoginDTO>(this) ?: return@get
-                    val member = Member.findByEmail(data.email)
+                    val email = queryParameterOrError(this, "email") ?: return@get
+                    val member = Member.findByEmail(email)
 
                     if (member == null) {
                         call.respond(HttpStatusCode.NotFound, "Unknown user.")
@@ -129,8 +130,8 @@ fun Application.memberManagement() {
                 }
 
                 delete {
-                    val data = receiveOrNull<LogoutDTO>(this) ?: return@delete
-                    val member = Member.findByEmail(data.email)
+                    val email = queryParameterOrError(this, "email") ?: return@delete
+                    val member = Member.findByEmail(email)
 
                     transaction {
                         member?.sessionId = 0

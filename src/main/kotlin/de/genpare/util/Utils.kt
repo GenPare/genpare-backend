@@ -47,4 +47,16 @@ object Utils {
 
     fun Int.toRange(width: Int) =
         IntRange(this % width, this % width + 1)
+
+    suspend fun queryParameterOrError(
+        context: PipelineContext<Unit, ApplicationCall>,
+        name: String
+    ): String? {
+        val param = context.call.request.queryParameters[name]
+
+        if (param == null)
+            context.call.respond(HttpStatusCode.BadRequest, "Missing $name parameter.")
+
+        return param
+    }
 }
