@@ -480,9 +480,4 @@ class ApplicationTest {
             }
         }
     }
-
-    @Test
-    fun jobTitleFilter() {
-        assertFilterSQL("salary.job_title = 'foobar'", JobTitleFilter("foobar"))
-    }
 }
