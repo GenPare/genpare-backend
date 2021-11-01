@@ -31,7 +31,6 @@ class ApplicationTest {
     private val testSalary = NewSalaryDTO(
         1337,
         69420,
-        Gender.DIVERSE,
         "Bar-ist in Foo-logy",
         State.BERLIN,
         LevelOfEducation.DOKTOR
@@ -40,7 +39,6 @@ class ApplicationTest {
     private val testModifySalary = ModifySalaryDTO(
         testSalary.sessionId,
         testSalary.salary,
-        testSalary.gender,
         testSalary.jobTitle,
         testSalary.state,
         testSalary.levelOfEducation
@@ -72,10 +70,10 @@ class ApplicationTest {
             null
         }
 
-    private fun assertFilterSQL(filter: AbstractFilter, stmt: String) =
+    private fun assertFilterSQL(stmt: String, filter: AbstractFilter) =
         QueryBuilder(false).apply {
             transaction { filter.op.toQueryBuilder(this@apply) }
-            assertEquals(toString(), stmt)
+            assertEquals(stmt, toString())
         }
 
     private fun insertTestUser() =
@@ -85,6 +83,7 @@ class ApplicationTest {
                 name = "Foo"
                 sessionId = 1337
                 birthdate = LocalDate.of(1815, 12, 10)
+                gender = Gender.DIVERSE
             }
         }
 
@@ -93,7 +92,6 @@ class ApplicationTest {
             Salary.new {
                 memberId = _memberId
                 salary = testSalary.salary
-                gender = testSalary.gender
                 jobTitle = testSalary.jobTitle
                 state = testSalary.state
                 levelOfEducation = testSalary.levelOfEducation
@@ -137,7 +135,7 @@ class ApplicationTest {
             handleRequest(
                 HttpMethod.Post,
                 "/members",
-                withJson(MemberDTO(null, "test@example.com", "Foo", birthdate))
+                withJson(MemberDTO(null, "test@example.com", "Foo", birthdate, Gender.DIVERSE))
             ).apply {
                 assertEquals(HttpStatusCode.OK, response.status())
                 assertNotNull(response.content)
@@ -156,7 +154,7 @@ class ApplicationTest {
             handleRequest(
                 HttpMethod.Post,
                 "/members",
-                withJson(MemberDTO(1337, "test@example.com", "Foo", birthdate))
+                withJson(MemberDTO(1337, "test@example.com", "Foo", birthdate, Gender.DIVERSE))
             ).apply {
                 assertEquals(HttpStatusCode.BadRequest, response.status())
             }
@@ -171,7 +169,7 @@ class ApplicationTest {
             handleRequest(
                 HttpMethod.Post,
                 "/members",
-                withJson(MemberDTO(null, "test@example.com", "Bar", birthdate))
+                withJson(MemberDTO(null, "test@example.com", "Bar", birthdate, Gender.DIVERSE))
             ).apply {
                 assertEquals(HttpStatusCode.Conflict, response.status())
             }
@@ -185,8 +183,7 @@ class ApplicationTest {
         withApplication(testEnvironment) {
             handleRequest(
                 HttpMethod.Get,
-                "/members/session",
-                withJson(LoginDTO("test@example.com"))
+                "/members/session?email=test@example.com"
             ).apply {
                 assertEquals(HttpStatusCode.OK, response.status())
 
@@ -201,8 +198,7 @@ class ApplicationTest {
         withApplication(testEnvironment) {
             handleRequest(
                 HttpMethod.Get,
-                "/members/session",
-                withJson(LoginDTO("test@example.com"))
+                "/members/session?email=test@example.com"
             ).apply {
                 assertEquals(HttpStatusCode.NotFound, response.status())
             }
@@ -216,8 +212,7 @@ class ApplicationTest {
         withApplication(testEnvironment) {
             handleRequest(
                 HttpMethod.Delete,
-                "/members/session",
-                withJson(LogoutDTO("test@example.com"))
+                "/members/session?email=test@example.com"
             ).apply {
                 assertEquals(HttpStatusCode.NoContent, response.status())
             }
@@ -229,8 +224,7 @@ class ApplicationTest {
         withApplication(testEnvironment) {
             handleRequest(
                 HttpMethod.Delete,
-                "/members/session",
-                withJson(LogoutDTO("test@example.com"))
+                "/members/session?email=test@example.com"
             ).apply {
                 assertEquals(HttpStatusCode.NoContent, response.status())
             }
@@ -318,8 +312,7 @@ class ApplicationTest {
         withApplication(testEnvironment) {
             handleRequest(
                 HttpMethod.Get,
-                "/salary/own",
-                withJson(FetchSalaryDTO(testUser.sessionId))
+                "/salary/own?sessionId=${testUser.sessionId}"
             ).apply {
                 assertEquals(HttpStatusCode.OK, response.status())
                 assertNotNull(response.content)
@@ -419,14 +412,6 @@ class ApplicationTest {
     }
 
     @Test
-    fun salaryPatchSucceedsGender() {
-        val testUser = insertTestUser()
-        insertTestSalary(testUser.id.value)
-
-        salaryPatchExecute(testModifySalary.copy(gender = Gender.FEMALE))
-    }
-
-    @Test
     fun salaryPatchSucceedsJobTitle() {
         val testUser = insertTestUser()
         insertTestSalary(testUser.id.value)
@@ -498,6 +483,6 @@ class ApplicationTest {
 
     @Test
     fun jobTitleFilter() {
-        assertFilterSQL(JobTitleFilter("foobar"), "Salary.job_title = 'foobar'")
+        assertFilterSQL("salary.job_title = 'foobar'", JobTitleFilter("foobar"))
     }
 }

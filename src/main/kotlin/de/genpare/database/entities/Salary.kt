@@ -15,11 +15,10 @@ class Salary(id: EntityID<Long>) : LongEntity(id) {
 
     var memberId by SalaryTable.memberId
     var salary by SalaryTable.salary
-    var gender by SalaryTable.gender
     var jobTitle by SalaryTable.jobTitle
     var state by SalaryTable.state
     var levelOfEducation by SalaryTable.levelOfEducation
 
     fun toDTO() =
-        SalaryDTO(salary, gender, jobTitle, state, levelOfEducation)
+        SalaryDTO(salary, jobTitle, state, levelOfEducation)
 }
