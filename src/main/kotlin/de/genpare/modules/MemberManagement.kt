@@ -31,6 +31,17 @@ fun Application.memberManagement() {
         }
     }
 
+    install(CORS) {
+        anyHost()
+
+        header(HttpHeaders.ContentType)
+
+        method(HttpMethod.Put)
+        method(HttpMethod.Patch)
+        method(HttpMethod.Delete)
+        method(HttpMethod.Options)
+    }
+
     routing {
         route("/members") {
             post {
