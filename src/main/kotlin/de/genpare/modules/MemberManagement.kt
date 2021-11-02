@@ -11,6 +11,7 @@ import de.genpare.query.filters.AbstractFilter
 import de.genpare.query.result_transformers.AbstractResultTransformer
 import de.genpare.type_adapters.*
 import de.genpare.util.Utils
+import de.genpare.util.Utils.getMemberBySessionId
 import de.genpare.util.Utils.queryParameterOrError
 import de.genpare.util.Utils.receiveOrNull
 import io.ktor.application.*
@@ -89,7 +90,7 @@ fun Application.memberManagement() {
 
                 val actualSessionId = transaction { member.sessionId }
 
-                if (data.sessionId != actualSessionId) {
+                if (data.sessionId.toLongOrNull() != actualSessionId) {
                     call.respond(HttpStatusCode.Unauthorized, "Invalid session.")
                     return@delete
                 }
@@ -103,12 +104,8 @@ fun Application.memberManagement() {
 
             patch {
                 val data = receiveOrNull<NameChangeDTO>(this) ?: return@patch
-                val member = Member.findBySessionId(data.sessionId)
-
-                if (member == null) {
-                    call.respond(HttpStatusCode.Unauthorized, "Invalid session.")
-                    return@patch
-                }
+                val member = data.sessionId.toLongOrNull()?.let { getMemberBySessionId(this, it) }
+                    ?: return@patch
 
                 transaction {
                     member.name = data.name
@@ -118,10 +115,9 @@ fun Application.memberManagement() {
             }
 
             get {
-                val sessionId = queryParameterOrError(this, "sessionId")
-                    ?.let(String::toLong) ?: return@get
+                val sessionId = queryParameterOrError(this, "sessionId") ?: return@get
 
-                val member = Utils.getMemberBySessionId(this, sessionId) ?: return@get
+                val member = getMemberBySessionId(this, sessionId.toLongOrNull()) ?: return@get
 
                 call.respond(member.toDTO())
             }
@@ -136,13 +132,13 @@ fun Application.memberManagement() {
                         return@get
                     }
 
-                    val session = SessionDTO(Random.nextLong())
+                    val sessionId = Random.nextLong()
 
                     transaction {
-                        member.sessionId = session.sessionId
+                        member.sessionId = sessionId
                     }
 
-                    call.respond(session)
+                    call.respond(SessionDTO(sessionId.toString()))
                 }
 
                 delete {
