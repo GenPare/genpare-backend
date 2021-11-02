@@ -29,8 +29,8 @@ object Utils {
             null
         }
 
-    suspend fun getMemberBySessionId(context: PipelineContext<Unit, ApplicationCall>, sessionId: Long) =
-        checkMember(context, Member.findBySessionId(sessionId), "Unknown session id.")
+    suspend fun getMemberBySessionId(context: PipelineContext<Unit, ApplicationCall>, sessionId: Long?) =
+        checkMember(context, sessionId?.let { Member.findBySessionId(it) }, "Unknown session id.")
 
     suspend fun getMemberByEmail(context: PipelineContext<Unit, ApplicationCall>, email: String) =
         checkMember(context, Member.findByEmail(email), "Unknown email address.")

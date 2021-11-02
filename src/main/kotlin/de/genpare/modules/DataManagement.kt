@@ -108,7 +108,8 @@ fun Application.dataManagement() {
 
                 put {
                     val data = receiveOrNull<NewSalaryDTO>(this) ?: return@put
-                    val member = getMemberBySessionId(this, data.sessionId) ?: return@put
+                    val member = getMemberBySessionId(this, data.sessionId.toLongOrNull())
+                        ?: return@put
 
                     if (Salary.findByMemberId(member.id.value) != null) {
                         call.respond(HttpStatusCode.Conflict, "Salary entry already exists for this user.")
@@ -140,7 +141,8 @@ fun Application.dataManagement() {
 
                 patch {
                     val data = receiveOrNull<ModifySalaryDTO>(this) ?: return@patch
-                    val member = getMemberBySessionId(this, data.sessionId) ?: return@patch
+                    val member = getMemberBySessionId(this, data.sessionId.toLongOrNull())
+                        ?: return@patch
                     val salary = Salary.findByMemberId(member.id.value)
 
                     if (salary == null) {

@@ -29,7 +29,7 @@ class ApplicationTest {
     private val birthdate = LocalDate.of(1815, 12, 10)
 
     private val testSalary = NewSalaryDTO(
-        1337,
+        "1337",
         69420,
         "Bar-ist in Foo-logy",
         State.BERLIN,
@@ -239,7 +239,7 @@ class ApplicationTest {
             handleRequest(
                 HttpMethod.Patch,
                 "/members",
-                withJson(NameChangeDTO("Maria Musterfrau", 1337))
+                withJson(NameChangeDTO("Maria Musterfrau", "1337"))
             ).apply {
                 assertEquals(HttpStatusCode.NoContent, response.status())
             }
@@ -254,9 +254,9 @@ class ApplicationTest {
             handleRequest(
                 HttpMethod.Patch,
                 "/members",
-                withJson(NameChangeDTO("Maria Musterfrau", 420))
+                withJson(NameChangeDTO("Maria Musterfrau", "420"))
             ).apply {
-                assertEquals(HttpStatusCode.Unauthorized, response.status())
+                assertEquals(HttpStatusCode.NotFound, response.status())
             }
         }
     }
@@ -269,7 +269,7 @@ class ApplicationTest {
             handleRequest(
                 HttpMethod.Delete,
                 "/members",
-                withJson(DeleteDTO("test@example.com", 1337))
+                withJson(DeleteDTO("test@example.com", "1337"))
             ).apply {
                 assertEquals(HttpStatusCode.NoContent, response.status())
             }
@@ -284,7 +284,7 @@ class ApplicationTest {
             handleRequest(
                 HttpMethod.Delete,
                 "/members",
-                withJson(DeleteDTO("test@example.com", 69))
+                withJson(DeleteDTO("test@example.com", "69"))
             ).apply {
                 assertEquals(HttpStatusCode.Unauthorized, response.status())
             }
@@ -297,7 +297,7 @@ class ApplicationTest {
             handleRequest(
                 HttpMethod.Delete,
                 "/members",
-                withJson(DeleteDTO("test@example.com", 1337))
+                withJson(DeleteDTO("test@example.com", "1337"))
             ).apply {
                 assertEquals(HttpStatusCode.NoContent, response.status())
             }
