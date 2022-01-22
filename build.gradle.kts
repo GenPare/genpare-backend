@@ -24,6 +24,7 @@ dependencies {
     implementation("io.ktor:ktor-server-core:$ktorVersion")
     implementation("io.ktor:ktor-server-netty:$ktorVersion")
     implementation("io.ktor:ktor-gson:$ktorVersion")
+    implementation("io.ktor:ktor-auth-jwt:$ktorVersion")
 
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
 

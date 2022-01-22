@@ -13,6 +13,8 @@ import de.genpare.util.Utils.queryParameterOrError
 import de.genpare.util.Utils.receiveOrNull
 import de.genpare.util.Utils.toAge
 import io.ktor.application.*
+import io.ktor.auth.*
+import io.ktor.auth.jwt.*
 import io.ktor.http.*
 import io.ktor.response.*
 import io.ktor.routing.*
@@ -81,12 +83,14 @@ fun Application.dataManagement() {
             }
 
             route("/info") {
-                get {
-                    val result = transaction {
-                        Salary.all().map { it.jobTitle }.distinct()
-                    }
+                authenticate("auth0") {
+                    get {
+                        val result = transaction {
+                            Salary.all().map { it.jobTitle }.distinct()
+                        }
 
-                    call.respond(result)
+                        call.respond(result)
+                    }
                 }
             }
 

@@ -1,5 +1,6 @@
 package de.genpare.modules
 
+import com.auth0.jwk.JwkProviderBuilder
 import de.genpare.data.dtos.DeleteDTO
 import de.genpare.data.dtos.MemberDTO
 import de.genpare.data.dtos.NameChangeDTO
@@ -15,6 +16,8 @@ import de.genpare.util.Utils.getMemberBySessionId
 import de.genpare.util.Utils.queryParameterOrError
 import de.genpare.util.Utils.receiveOrNull
 import io.ktor.application.*
+import io.ktor.auth.*
+import io.ktor.auth.jwt.*
 import io.ktor.features.*
 import io.ktor.gson.*
 import io.ktor.http.*
@@ -22,9 +25,28 @@ import io.ktor.response.*
 import io.ktor.routing.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.time.LocalDate
+import java.util.concurrent.TimeUnit
 import kotlin.random.Random
 
+fun validateCredentials(credential: JWTCredential): JWTPrincipal? {
+    val containsAudience = credential.payload.audience.contains(System.getenv("AUDIENCE"))
+
+    return if (containsAudience) JWTPrincipal(credential.payload) else null
+}
+
 fun Application.memberManagement() {
+    val jwkProvider = JwkProviderBuilder(System.getenv("ISSUER"))
+        .cached(10, 24, TimeUnit.HOURS)
+        .rateLimited(10, 1, TimeUnit.MINUTES)
+        .build()
+
+    install(Authentication) {
+        jwt("auth0") {
+            verifier(jwkProvider, System.getenv("ISSUER"))
+            validate { credential -> validateCredentials(credential) }
+        }
+    }
+
     install(ContentNegotiation) {
         gson {
             registerTypeAdapter(LocalDate::class.java, LocalDateTypeAdapter)
@@ -43,6 +65,10 @@ fun Application.memberManagement() {
         anyHost()
 
         header(HttpHeaders.ContentType)
+        header("authorization")
+
+        allowCredentials = true
+        allowNonSimpleContentTypes = true
 
         method(HttpMethod.Put)
         method(HttpMethod.Patch)
