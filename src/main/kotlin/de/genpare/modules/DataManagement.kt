@@ -1,6 +1,9 @@
 package de.genpare.modules
 
-import de.genpare.data.dtos.*
+import de.genpare.data.dtos.FilterListDTO
+import de.genpare.data.dtos.ModifySalaryDTO
+import de.genpare.data.dtos.NewSalaryDTO
+import de.genpare.data.dtos.ResultsDTO
 import de.genpare.data.enums.Gender
 import de.genpare.data.enums.LevelOfEducation
 import de.genpare.data.enums.State
@@ -14,7 +17,6 @@ import de.genpare.util.Utils.receiveOrNull
 import de.genpare.util.Utils.toAge
 import io.ktor.application.*
 import io.ktor.auth.*
-import io.ktor.auth.jwt.*
 import io.ktor.http.*
 import io.ktor.response.*
 import io.ktor.routing.*
@@ -46,133 +48,135 @@ data class IntermediateResult(
 
 fun Application.dataManagement() {
     routing {
-        route("/salary") {
-            post {
-                val data = receiveOrNull<FilterListDTO>(this) ?: return@post
+        authenticate("auth0") {
+            route("/salary") {
+                post {
+                    val data = receiveOrNull<FilterListDTO>(this) ?: return@post
 
-                if (data.filters.isEmpty()) {
-                    call.respond(HttpStatusCode.BadRequest, "Filters can't be empty!")
-                    return@post
+                    if (data.filters.isEmpty()) {
+                        call.respond(HttpStatusCode.BadRequest, "Filters can't be empty!")
+                        return@post
+                    }
+
+                    if (data.resultTransformers.isEmpty()) {
+                        call.respond(HttpStatusCode.BadRequest, "Result transformers can't be empty!")
+                        return@post
+                    }
+
+                    val results = transaction {
+                        // Filters are combined via an AND operation in order to apply all of them at once
+                        val intermediate = SalaryTable.innerJoin(MemberTable)
+                            .slice(SalaryTable.columns)
+                            .select(AndOp(data.filters.map(AbstractFilter::op)))
+                            .map {
+                                IntermediateResult(
+                                    age = it[MemberTable.birthdate].toAge(),
+                                    salary = it[SalaryTable.salary],
+                                    gender = it[MemberTable.gender],
+                                    jobTitle = it[SalaryTable.jobTitle],
+                                    state = it[SalaryTable.state],
+                                    levelOfEducation = it[SalaryTable.levelOfEducation]
+                                )
+                            }
+
+                        ResultsDTO(data.resultTransformers.map { it.transform(intermediate) })
+                    }
+
+                    call.respond(results)
                 }
 
-                if (data.resultTransformers.isEmpty()) {
-                    call.respond(HttpStatusCode.BadRequest, "Result transformers can't be empty!")
-                    return@post
+                route("/info") {
+                    authenticate("auth0") {
+                        get {
+                            val result = transaction {
+                                Salary.all().map { it.jobTitle }.distinct()
+                            }
+
+                            call.respond(result)
+                        }
+                    }
                 }
 
-                val results = transaction {
-                    // Filters are combined via an AND operation in order to apply all of them at once
-                    val intermediate = SalaryTable.innerJoin(MemberTable)
-                        .slice(SalaryTable.columns)
-                        .select(AndOp(data.filters.map(AbstractFilter::op)))
-                        .map {
-                            IntermediateResult(
-                                age = it[MemberTable.birthdate].toAge(),
-                                salary = it[SalaryTable.salary],
-                                gender = it[MemberTable.gender],
-                                jobTitle = it[SalaryTable.jobTitle],
-                                state = it[SalaryTable.state],
-                                levelOfEducation = it[SalaryTable.levelOfEducation]
+                route("/own") {
+                    get {
+                        val sessionId = queryParameterOrError(this, "sessionId")
+                            ?.let(String::toLong) ?: return@get
+
+                        val member = getMemberBySessionId(this, sessionId) ?: return@get
+                        val salary = Salary.findByMemberId(member.id.value)
+
+                        if (salary == null) {
+                            call.respond(HttpStatusCode.NotFound, "No salary data for this user was found.")
+                            return@get
+                        }
+
+                        call.respond(salary.toDTO())
+                    }
+
+                    put {
+                        val data = receiveOrNull<NewSalaryDTO>(this) ?: return@put
+                        val member = getMemberBySessionId(this, data.sessionId.toLongOrNull())
+                            ?: return@put
+
+                        if (Salary.findByMemberId(member.id.value) != null) {
+                            call.respond(HttpStatusCode.Conflict, "Salary entry already exists for this user.")
+                            return@put
+                        }
+
+                        checkJobTitleLength(this, data.jobTitle) ?: return@put
+
+                        val newSalary = transaction {
+                            val salary = Salary.new {
+                                memberId = member.id.value
+                                salary = data.salary
+                                jobTitle = data.jobTitle
+                                state = data.state
+                                levelOfEducation = data.levelOfEducation
+                            }
+
+                            NewSalaryDTO(
+                                data.sessionId,
+                                salary.salary,
+                                salary.jobTitle,
+                                salary.state,
+                                salary.levelOfEducation
                             )
                         }
 
-                    ResultsDTO(data.resultTransformers.map { it.transform(intermediate) })
-                }
+                        call.respond(newSalary)
+                    }
 
-                call.respond(results)
-            }
+                    patch {
+                        val data = receiveOrNull<ModifySalaryDTO>(this) ?: return@patch
+                        val member = getMemberBySessionId(this, data.sessionId.toLongOrNull())
+                            ?: return@patch
+                        val salary = Salary.findByMemberId(member.id.value)
 
-            route("/info") {
-                authenticate("auth0") {
-                    get {
-                        val result = transaction {
-                            Salary.all().map { it.jobTitle }.distinct()
+                        if (salary == null) {
+                            call.respond(HttpStatusCode.NotFound, "No existing salary entry was found.")
+                            return@patch
                         }
 
-                        call.respond(result)
-                    }
-                }
-            }
+                        if (data.jobTitle != null)
+                            checkJobTitleLength(this, data.jobTitle) ?: return@patch
 
-            route("/own") {
-                get {
-                    val sessionId = queryParameterOrError(this, "sessionId")
-                        ?.let(String::toLong) ?: return@get
+                        val newSalary = transaction {
+                            if (data.salary != null) salary.salary = data.salary
+                            if (data.jobTitle != null) salary.jobTitle = data.jobTitle
+                            if (data.state != null) salary.state = data.state
+                            if (data.levelOfEducation != null) salary.levelOfEducation = data.levelOfEducation
 
-                    val member = getMemberBySessionId(this, sessionId) ?: return@get
-                    val salary = Salary.findByMemberId(member.id.value)
-
-                    if (salary == null) {
-                        call.respond(HttpStatusCode.NotFound, "No salary data for this user was found.")
-                        return@get
-                    }
-
-                    call.respond(salary.toDTO())
-                }
-
-                put {
-                    val data = receiveOrNull<NewSalaryDTO>(this) ?: return@put
-                    val member = getMemberBySessionId(this, data.sessionId.toLongOrNull())
-                        ?: return@put
-
-                    if (Salary.findByMemberId(member.id.value) != null) {
-                        call.respond(HttpStatusCode.Conflict, "Salary entry already exists for this user.")
-                        return@put
-                    }
-
-                    checkJobTitleLength(this, data.jobTitle) ?: return@put
-
-                    val newSalary = transaction {
-                        val salary = Salary.new {
-                            memberId = member.id.value
-                            salary = data.salary
-                            jobTitle = data.jobTitle
-                            state = data.state
-                            levelOfEducation = data.levelOfEducation
+                            ModifySalaryDTO(
+                                data.sessionId,
+                                salary.salary,
+                                salary.jobTitle,
+                                salary.state,
+                                salary.levelOfEducation
+                            )
                         }
 
-                        NewSalaryDTO(
-                            data.sessionId,
-                            salary.salary,
-                            salary.jobTitle,
-                            salary.state,
-                            salary.levelOfEducation
-                        )
+                        call.respond(newSalary)
                     }
-
-                    call.respond(newSalary)
-                }
-
-                patch {
-                    val data = receiveOrNull<ModifySalaryDTO>(this) ?: return@patch
-                    val member = getMemberBySessionId(this, data.sessionId.toLongOrNull())
-                        ?: return@patch
-                    val salary = Salary.findByMemberId(member.id.value)
-
-                    if (salary == null) {
-                        call.respond(HttpStatusCode.NotFound, "No existing salary entry was found.")
-                        return@patch
-                    }
-
-                    if (data.jobTitle != null)
-                        checkJobTitleLength(this, data.jobTitle) ?: return@patch
-
-                    val newSalary = transaction {
-                        if (data.salary != null) salary.salary = data.salary
-                        if (data.jobTitle != null) salary.jobTitle = data.jobTitle
-                        if (data.state != null) salary.state = data.state
-                        if (data.levelOfEducation != null) salary.levelOfEducation = data.levelOfEducation
-
-                        ModifySalaryDTO(
-                            data.sessionId,
-                            salary.salary,
-                            salary.jobTitle,
-                            salary.state,
-                            salary.levelOfEducation
-                        )
-                    }
-
-                    call.respond(newSalary)
                 }
             }
         }

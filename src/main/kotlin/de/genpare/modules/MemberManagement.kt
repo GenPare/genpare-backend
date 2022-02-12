@@ -11,7 +11,6 @@ import de.genpare.database.entities.Member
 import de.genpare.query.filters.AbstractFilter
 import de.genpare.query.result_transformers.AbstractResultTransformer
 import de.genpare.type_adapters.*
-import de.genpare.util.Utils
 import de.genpare.util.Utils.getMemberBySessionId
 import de.genpare.util.Utils.queryParameterOrError
 import de.genpare.util.Utils.receiveOrNull
@@ -43,7 +42,10 @@ fun Application.memberManagement() {
     install(Authentication) {
         jwt("auth0") {
             verifier(jwkProvider, System.getenv("ISSUER"))
-            validate { credential -> validateCredentials(credential) }
+            validate { credential ->
+                log.debug("JWT ID: ${credential.jwtId}")
+                validateCredentials(credential)
+            }
         }
     }
 
@@ -77,105 +79,107 @@ fun Application.memberManagement() {
     }
 
     routing {
-        route("/members") {
-            post {
-                val data = receiveOrNull<MemberDTO>(this) ?: return@post
+        authenticate("auth0") {
+            route("/members") {
+                post {
+                    val data = receiveOrNull<MemberDTO>(this) ?: return@post
 
-                if (data.id != null) {
-                    call.respond(HttpStatusCode.BadRequest, "ID mustn't be set for a new user!")
-                    return@post
-                }
-
-                if (Member.findByEmail(data.email) != null) {
-                    call.respond(HttpStatusCode.Conflict, "This email is already in use.")
-                    return@post
-                }
-
-                val newMember = transaction {
-                    val member = Member.newMember {
-                        email = data.email
-                        name = data.name
-                        birthdate = data.birthdate
-                        gender = data.gender
+                    if (data.id != null) {
+                        call.respond(HttpStatusCode.BadRequest, "ID mustn't be set for a new user!")
+                        return@post
                     }
 
-                    MemberDTO(member.id.value, member.email, member.name, member.birthdate, member.gender)
-                }
-
-                call.respond(newMember)
-            }
-
-            delete {
-                val data = receiveOrNull<DeleteDTO>(this) ?: return@delete
-                val member = Member.findByEmail(data.email)
-
-                if (member == null) {
-                    call.respond(HttpStatusCode.NoContent)
-                    return@delete
-                }
-
-                val actualSessionId = transaction { member.sessionId }
-
-                if (data.sessionId.toLongOrNull() != actualSessionId) {
-                    call.respond(HttpStatusCode.Unauthorized, "Invalid session.")
-                    return@delete
-                }
-
-                transaction {
-                    member.delete()
-                }
-
-                call.respond(HttpStatusCode.NoContent)
-            }
-
-            patch {
-                val data = receiveOrNull<NameChangeDTO>(this) ?: return@patch
-                val member = data.sessionId.toLongOrNull()?.let { getMemberBySessionId(this, it) }
-                    ?: return@patch
-
-                transaction {
-                    member.name = data.name
-                }
-
-                call.respond(HttpStatusCode.NoContent)
-            }
-
-            get {
-                val sessionId = queryParameterOrError(this, "sessionId") ?: return@get
-
-                val member = getMemberBySessionId(this, sessionId.toLongOrNull()) ?: return@get
-
-                call.respond(member.toDTO())
-            }
-
-            route("/session") {
-                get {
-                    val email = queryParameterOrError(this, "email") ?: return@get
-                    val member = Member.findByEmail(email)
-
-                    if (member == null) {
-                        call.respond(HttpStatusCode.NotFound, "Unknown user.")
-                        return@get
+                    if (Member.findByEmail(data.email) != null) {
+                        call.respond(HttpStatusCode.Conflict, "This email is already in use.")
+                        return@post
                     }
 
-                    val sessionId = Random.nextLong()
+                    val newMember = transaction {
+                        val member = Member.newMember {
+                            email = data.email
+                            name = data.name
+                            birthdate = data.birthdate
+                            gender = data.gender
+                        }
 
-                    transaction {
-                        member.sessionId = sessionId
+                        MemberDTO(member.id.value, member.email, member.name, member.birthdate, member.gender)
                     }
 
-                    call.respond(SessionDTO(sessionId.toString()))
+                    call.respond(newMember)
                 }
 
                 delete {
-                    val email = queryParameterOrError(this, "email") ?: return@delete
-                    val member = Member.findByEmail(email)
+                    val data = receiveOrNull<DeleteDTO>(this) ?: return@delete
+                    val member = Member.findByEmail(data.email)
+
+                    if (member == null) {
+                        call.respond(HttpStatusCode.NoContent)
+                        return@delete
+                    }
+
+                    val actualSessionId = transaction { member.sessionId }
+
+                    if (data.sessionId.toLongOrNull() != actualSessionId) {
+                        call.respond(HttpStatusCode.Unauthorized, "Invalid session.")
+                        return@delete
+                    }
 
                     transaction {
-                        member?.sessionId = 0
+                        member.delete()
                     }
 
                     call.respond(HttpStatusCode.NoContent)
+                }
+
+                patch {
+                    val data = receiveOrNull<NameChangeDTO>(this) ?: return@patch
+                    val member = data.sessionId.toLongOrNull()?.let { getMemberBySessionId(this, it) }
+                        ?: return@patch
+
+                    transaction {
+                        member.name = data.name
+                    }
+
+                    call.respond(HttpStatusCode.NoContent)
+                }
+
+                get {
+                    val sessionId = queryParameterOrError(this, "sessionId") ?: return@get
+
+                    val member = getMemberBySessionId(this, sessionId.toLongOrNull()) ?: return@get
+
+                    call.respond(member.toDTO())
+                }
+
+                route("/session") {
+                    get {
+                        val email = queryParameterOrError(this, "email") ?: return@get
+                        val member = Member.findByEmail(email)
+
+                        if (member == null) {
+                            call.respond(HttpStatusCode.NotFound, "Unknown user.")
+                            return@get
+                        }
+
+                        val sessionId = Random.nextLong()
+
+                        transaction {
+                            member.sessionId = sessionId
+                        }
+
+                        call.respond(SessionDTO(sessionId.toString()))
+                    }
+
+                    delete {
+                        val email = queryParameterOrError(this, "email") ?: return@delete
+                        val member = Member.findByEmail(email)
+
+                        transaction {
+                            member?.sessionId = 0
+                        }
+
+                        call.respond(HttpStatusCode.NoContent)
+                    }
                 }
             }
         }
