@@ -37,7 +37,12 @@ gradlew.bat installDist
 This step will take quite some time, as Gradle will download all necessary libraries and compile the backend, so grab
 a coffee for this part.
 
-#### Step 2:
+#### Step 2: Set the database username and password
+
+Copy the contents of `.env.example` to a new file called `.env`. Then set a database name and password. It doesn't
+matter what they are, even if the password is very unsecure, since it's going to be a local container.
+
+#### Step 3: Build the image and run the container
 
 Now you can let Docker Compose do the rest for you.
 
