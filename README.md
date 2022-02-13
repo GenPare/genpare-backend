@@ -3,6 +3,51 @@
 This repository is concerned with the backend of the web application GenPare. It is written in Kotlin using
 [Ktor](https://ktor.io). It also uses a MariaDB instance.
 
+## Running with Docker Compose
+
+### Prerequisites:
+
+- [Docker](https://docs.docker.com/get-docker/)
+- [Docker Compose](https://docs.docker.com/compose/install/)
+- A JDK
+
+### Building the image
+
+#### Step 0: Remove an existing image
+
+If you already have a backend image present, you need to remove it, or changes won't be applied.
+
+```bash
+docker-compose rm -vf
+docker image rm genpare-backend_genpare-backend
+```
+
+#### Step 1: Build the necessary files
+
+Open a terminal in the project root and run the Gradle `installDist` task.
+
+```bash
+# Windows
+gradlew.bat installDist
+
+# *nix
+./gradlew installDist
+```
+
+This step will take quite some time, as Gradle will download all necessary libraries and compile the backend, so grab
+a coffee for this part.
+
+#### Step 2:
+
+Now you can let Docker Compose do the rest for you.
+
+```bash
+docker-compose up
+```
+
+The first time you execute this command, Docker Compose will build the image. Every subsequent time, it will just start
+the containers without rebuilding them.
+
 ## Setting up a development environment
 
 This section explains how to set up a local development environment.
