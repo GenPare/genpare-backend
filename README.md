@@ -3,6 +3,56 @@
 This repository is concerned with the backend of the web application GenPare. It is written in Kotlin using
 [Ktor](https://ktor.io). It also uses a MariaDB instance.
 
+## Running with Docker Compose
+
+### Prerequisites:
+
+- [Docker](https://docs.docker.com/get-docker/)
+- [Docker Compose](https://docs.docker.com/compose/install/)
+- A JDK
+
+### Building the image
+
+#### Step 0: Remove an existing image
+
+If you already have a backend image present, you need to remove it, or changes won't be applied.
+
+```bash
+docker-compose rm -vf
+docker image rm genpare-backend_genpare-backend
+```
+
+#### Step 1: Build the necessary files
+
+Open a terminal in the project root and run the Gradle `installDist` task.
+
+```bash
+# Windows
+gradlew.bat installDist
+
+# *nix
+./gradlew installDist
+```
+
+This step will take quite some time, as Gradle will download all necessary libraries and compile the backend, so grab
+a coffee for this part.
+
+#### Step 2: Set the database username and password
+
+Copy the contents of `.env.example` to a new file called `.env`. Then set a database name and password. It doesn't
+matter what they are, even if the password is very unsecure, since it's going to be a local container.
+
+#### Step 3: Build the image and run the container
+
+Now you can let Docker Compose do the rest for you.
+
+```bash
+docker-compose up
+```
+
+The first time you execute this command, Docker Compose will build the image. Every subsequent time, it will just start
+the containers without rebuilding them.
+
 ## Setting up a development environment
 
 This section explains how to set up a local development environment.
@@ -56,7 +106,7 @@ however that you will need to trust the project at some point to actually build 
 At this point, Gradle will automatically download all required dependencies and cache them locally, so they don't need
 to be downloaded again. After the Gradle project was fully imported, please check your SDK version to ensure the built
 files are built with Java 16. For this, go to `File` > `Project Structure...` > `Project Settings` > `Project`. Here,
-the selected project SDK should be 16. Relevant is the number written in gray text to the right, not the identifier to 
+the selected project SDK should be 16. Relevant is the number written in gray text to the right, not the identifier to
 the left written in white text. If not, change the version to be 16.
 
 ![Check your Java SDK level to be 16!](https://egirl.rip/3Gk1AQJive.png?key=UUGpgb9ZKS9sSe)
@@ -87,12 +137,12 @@ this user for only the newly created database, and lastly flush these permission
 When you're done with all these steps, you can run the server application. You have two options:
 
 1. Click on the Gradle tab on the right-hand side and go to `genpare-backend` > `Tasks` > `application`. Here, you can
-just double-click `run`.
+   just double-click `run`.
 
 ![Run the "run" Gradle task.](https://egirl.rip/vCQA5TE6jV.png?key=aBqFSLQRyQ0PqC)
 
 2. In the project view on the left-hand side, go to `genpare-backend` > `src` > `main` > `kotlin` > `de.genpare` >
-`Application.kt`.
+   `Application.kt`.
 
 ![Open the Application.kt file.](https://egirl.rip/WW7EQiUZk5.png?key=MfisljCQMqdcOa)
 
