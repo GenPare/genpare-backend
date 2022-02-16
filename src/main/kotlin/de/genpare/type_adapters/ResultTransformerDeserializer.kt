@@ -5,6 +5,7 @@ import com.google.gson.JsonDeserializer
 import com.google.gson.JsonElement
 import de.genpare.query.result_transformers.AbstractResultTransformer
 import de.genpare.query.result_transformers.AverageResultTransformer
+import de.genpare.query.result_transformers.ListResultTransformer
 import java.lang.reflect.Type
 
 object ResultTransformerDeserializer : JsonDeserializer<AbstractResultTransformer> {
@@ -17,6 +18,7 @@ object ResultTransformerDeserializer : JsonDeserializer<AbstractResultTransforme
 
         return when (jsonObj.get("name").asString) {
             "average" -> AverageResultTransformer()
+            "list" -> ListResultTransformer()
             else -> null
         }
     }
