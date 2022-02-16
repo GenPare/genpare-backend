@@ -62,7 +62,7 @@ fun Application.dataManagement() {
                 val results = transaction {
                     // Filters are combined via an AND operation in order to apply all of them at once
                     val intermediate = SalaryTable.join(MemberTable, JoinType.INNER, SalaryTable.memberId, MemberTable.id)
-                        .slice(SalaryTable.columns)
+                        .slice(SalaryTable.columns + MemberTable.columns)
                         .select(AndOp(data.filters.map(AbstractFilter::op)))
                         .map {
                             log.debug("Current row id: ${it[MemberTable.id].value}")
