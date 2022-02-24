@@ -65,10 +65,6 @@ fun Application.dataManagement() {
                         .slice(SalaryTable.columns + MemberTable.columns)
                         .select(AndOp(data.filters.map(AbstractFilter::op)))
                         .map {
-                            log.debug("Current row id: ${it[MemberTable.id].value}")
-                            it
-                        }
-                        .map {
                             IntermediateResult(
                                 age = it[MemberTable.birthdate].toAge(),
                                 salary = it[SalaryTable.salary],
