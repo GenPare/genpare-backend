@@ -46,7 +46,7 @@ object Utils {
         this.until(LocalDate.now()).years
 
     fun Int.toRange(width: Int) =
-        IntRange(this % width, this % width + 1)
+        IntRange(floorDiv(width) * width, (floorDiv(width) + 1) * width)
 
     suspend fun queryParameterOrError(
         context: PipelineContext<Unit, ApplicationCall>,

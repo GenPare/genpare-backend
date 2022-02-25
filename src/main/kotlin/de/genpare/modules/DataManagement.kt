@@ -22,6 +22,7 @@ import io.ktor.response.*
 import io.ktor.routing.*
 import io.ktor.util.pipeline.*
 import org.jetbrains.exposed.sql.AndOp
+import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 
@@ -63,21 +64,21 @@ fun Application.dataManagement() {
                         return@post
                     }
 
-                    val results = transaction {
-                        // Filters are combined via an AND operation in order to apply all of them at once
-                        val intermediate = SalaryTable.innerJoin(MemberTable)
-                            .slice(SalaryTable.columns)
-                            .select(AndOp(data.filters.map(AbstractFilter::op)))
-                            .map {
-                                IntermediateResult(
-                                    age = it[MemberTable.birthdate].toAge(),
-                                    salary = it[SalaryTable.salary],
-                                    gender = it[MemberTable.gender],
-                                    jobTitle = it[SalaryTable.jobTitle],
-                                    state = it[SalaryTable.state],
-                                    levelOfEducation = it[SalaryTable.levelOfEducation]
-                                )
-                            }
+                val results = transaction {
+                    // Filters are combined via an AND operation in order to apply all of them at once
+                    val intermediate = SalaryTable.join(MemberTable, JoinType.INNER, SalaryTable.memberId, MemberTable.id)
+                        .slice(SalaryTable.columns + MemberTable.columns)
+                        .select(AndOp(data.filters.map(AbstractFilter::op)))
+                        .map {
+                            IntermediateResult(
+                                age = it[MemberTable.birthdate].toAge(),
+                                salary = it[SalaryTable.salary],
+                                gender = it[MemberTable.gender],
+                                jobTitle = it[SalaryTable.jobTitle],
+                                state = it[SalaryTable.state],
+                                levelOfEducation = it[SalaryTable.levelOfEducation]
+                            )
+                        }
 
                         ResultsDTO(data.resultTransformers.map { it.transform(intermediate) })
                     }
