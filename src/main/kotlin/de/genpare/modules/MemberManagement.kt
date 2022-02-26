@@ -3,7 +3,7 @@ package de.genpare.modules
 import com.auth0.jwk.JwkProviderBuilder
 import de.genpare.data.dtos.DeleteDTO
 import de.genpare.data.dtos.MemberDTO
-import de.genpare.data.dtos.NameChangeDTO
+import de.genpare.data.dtos.ModifyDataDTO
 import de.genpare.data.dtos.SessionDTO
 import de.genpare.data.enums.Gender
 import de.genpare.data.enums.State
@@ -42,10 +42,7 @@ fun Application.memberManagement() {
     install(Authentication) {
         jwt("auth0") {
             verifier(jwkProvider, System.getenv("ISSUER"))
-            validate { credential ->
-                log.debug("JWT ID: ${credential.jwtId}")
-                validateCredentials(credential)
-            }
+            validate { credential -> validateCredentials(credential) }
         }
     }
 
@@ -132,12 +129,18 @@ fun Application.memberManagement() {
                 }
 
                 patch {
-                    val data = receiveOrNull<NameChangeDTO>(this) ?: return@patch
+                    val data = receiveOrNull<ModifyDataDTO>(this) ?: return@patch
                     val member = data.sessionId.toLongOrNull()?.let { getMemberBySessionId(this, it) }
                         ?: return@patch
 
+                    if ((data.name == null) and (data.gender == null)) {
+                        call.respond(HttpStatusCode.BadRequest, "Request can't be empty.")
+                        return@patch
+                    }
+
                     transaction {
-                        member.name = data.name
+                        if (data.name != null) member.name = data.name
+                        if (data.gender != null) member.gender = data.gender
                     }
 
                     call.respond(HttpStatusCode.NoContent)

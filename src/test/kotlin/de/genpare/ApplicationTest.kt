@@ -11,9 +11,7 @@ import de.genpare.database.entities.Member
 import de.genpare.database.entities.Salary
 import de.genpare.modules.setup
 import de.genpare.query.filters.AbstractFilter
-import de.genpare.query.filters.JobTitleFilter
 import de.genpare.query.result_transformers.AbstractResultTransformer
-import de.genpare.query.result_transformers.AverageResultTransformer
 import de.genpare.type_adapters.*
 import io.ktor.config.*
 import io.ktor.http.*
@@ -239,7 +237,7 @@ class ApplicationTest {
             handleRequest(
                 HttpMethod.Patch,
                 "/members",
-                withJson(NameChangeDTO("Maria Musterfrau", "1337"))
+                withJson(ModifyDataDTO("Maria Musterfrau", null, "1337"))
             ).apply {
                 assertEquals(HttpStatusCode.NoContent, response.status())
             }
@@ -254,7 +252,37 @@ class ApplicationTest {
             handleRequest(
                 HttpMethod.Patch,
                 "/members",
-                withJson(NameChangeDTO("Maria Musterfrau", "420"))
+                withJson(ModifyDataDTO("Maria Musterfrau", null, "420"))
+            ).apply {
+                assertEquals(HttpStatusCode.NotFound, response.status())
+            }
+        }
+    }
+
+    @Test
+    fun genderChangeSucceeds() {
+        insertTestUser()
+
+        withApplication(testEnvironment) {
+            handleRequest(
+                HttpMethod.Patch,
+                "/members",
+                withJson(ModifyDataDTO(null, Gender.FEMALE, "1337"))
+            ).apply {
+                assertEquals(HttpStatusCode.NoContent, response.status())
+            }
+        }
+    }
+
+    @Test
+    fun genderChangeWithInvalidSessionId() {
+        insertTestUser()
+
+        withApplication(testEnvironment) {
+            handleRequest(
+                HttpMethod.Patch,
+                "/members",
+                withJson(ModifyDataDTO(null, Gender.FEMALE, "420"))
             ).apply {
                 assertEquals(HttpStatusCode.NotFound, response.status())
             }

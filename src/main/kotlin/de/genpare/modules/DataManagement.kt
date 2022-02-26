@@ -87,14 +87,12 @@ fun Application.dataManagement() {
                 }
 
                 route("/info") {
-                    authenticate("auth0") {
-                        get {
-                            val result = transaction {
-                                Salary.all().map { it.jobTitle }.distinct()
-                            }
-
-                            call.respond(result)
+                    get {
+                        val result = transaction {
+                            Salary.all().map { it.jobTitle }.distinct()
                         }
+
+                        call.respond(result)
                     }
                 }
 
@@ -156,6 +154,10 @@ fun Application.dataManagement() {
                         if (salary == null) {
                             call.respond(HttpStatusCode.NotFound, "No existing salary entry was found.")
                             return@patch
+                        }
+
+                        if ((data.salary == null) and (data.jobTitle == null) and (data.state == null)and (data.levelOfEducation == null)) {
+                            call.respond(HttpStatusCode.BadRequest, "Request can't be empty.")
                         }
 
                         if (data.jobTitle != null)
