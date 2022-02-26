@@ -42,10 +42,7 @@ fun Application.memberManagement() {
     install(Authentication) {
         jwt("auth0") {
             verifier(jwkProvider, System.getenv("ISSUER"))
-            validate { credential ->
-                log.debug("JWT ID: ${credential.jwtId}")
-                validateCredentials(credential)
-            }
+            validate { credential -> validateCredentials(credential) }
         }
     }
 
