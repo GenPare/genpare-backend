@@ -13,7 +13,7 @@ services:
         container_name: genpare_backend
         build: .
         ports:
-            - 8280:8080
+            - 8080:8080
         depends_on:
             - mariadb
         environment:
