@@ -3,24 +3,23 @@ services:
         container_name: genpare_mariadb
         image: mariadb:latest
         environment:
-            MARIADB_DATABASE: genpare
+            MARIADB_DATABASE: ${MARIADB_USER}
             MARIADB_USER: ${MARIADB_USER}
             MARIADB_PASSWORD: ${MARIADB_PASSWORD}
             MYSQL_HOST: genpare_mariadb
-            MARIADB_RANDOM_ROOT_PASSWORD: yes
-        links:
-            - "genpare_mariadb"
+            MARIADB_RANDOM_ROOT_PASSWORD: "yes"
+        
     genpare-backend:
         container_name: genpare_backend
         build: .
         ports:
-            - 8080:8080
+            - 8280:8080
         depends_on:
-            - genpare_mariadb
-        links:
-            - genpare_mariadb
+            - mariadb
         environment:
+            AUDIENCE: ${AUDIENCE}
             GENPARE_DB_PASSWORD: ${MARIADB_PASSWORD}
-            GENPARE_DB_URL: jdbc:mysql://genpare_mariadb:3306/${MARIADB_USER}
+            GENPARE_DB_URL: jdbc:mysql://mariadb:3306/${MARIADB_USER}
             GENPARE_DB_USER: ${MARIADB_USER}
-            GENPARE_DB_MAX_RETRIES: 3
+            GENPARE_DB_MAX_RETRIES: 5
+            ISSUER: ${ISSUER}
