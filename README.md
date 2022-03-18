@@ -37,10 +37,11 @@ gradlew.bat installDist
 This step will take quite some time, as Gradle will download all necessary libraries and compile the backend, so grab
 a coffee for this part.
 
-#### Step 2: Set the database username and password
+#### Step 2: Set environment variables
 
 Copy the contents of `.env.example` to a new file called `.env`. Then set a database name and password. It doesn't
-matter what they are, even if the password is very unsecure, since it's going to be a local container.
+matter what they are, even if the password is very unsecure, since it's going to be a local container. For the audience 
+and issuer use the Auth0 development credentials.
 
 #### Step 3: Build the image and run the container
 
