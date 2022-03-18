@@ -145,7 +145,7 @@ Afterwards you have to add the variables to the `Environment variables` field.
 
 ![Add the environment variables.](https://cdn.discordapp.com/attachments/765500125913022474/954410756378595328/2022-03-18_17h07_17.png)
 
-This is the place where you have to add the variables, which were given to you by the document.
+This is the place where you have to add the variables, which were given to you by the developers.
 
 #### Running the server
 
