@@ -133,6 +133,20 @@ FLUSH PRIVILEGES;
 They create a new database called `genpare`, a new user `genpare` with the password `testing123`, grant permissions to
 this user for only the newly created database, and lastly flush these permissions for them to take effect immediately.
 
+#### Setting environment variables
+
+Before running the server, you need to set some environment variables. Do to so, you have to open the run
+configurations.
+
+![Open the run configurations.](https://cdn.discordapp.com/attachments/765500125913022474/954409896286257182/2022-03-18_17h03_42.png)
+
+Then make sure, you have the correct configuration selected on the left-hand site. 
+Afterwards you have to add the variables to the `Environment variables` field. 
+
+![Add the environment variables.](https://cdn.discordapp.com/attachments/765500125913022474/954410756378595328/2022-03-18_17h07_17.png)
+
+This is the place where you have to add the variables, which were given to you by the document.
+
 #### Running the server
 
 When you're done with all these steps, you can run the server application. You have two options:
